@@ -29,6 +29,7 @@ public abstract class PrototypeRoomDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             PrototypeRoomDatabase.class, "prototype_database")
+                            .addCallback(sRoomDatabaseCallback)
                             .build();
                 }
             }

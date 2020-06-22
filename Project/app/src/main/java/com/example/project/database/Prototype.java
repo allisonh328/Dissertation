@@ -12,7 +12,7 @@ public class Prototype {
     @PrimaryKey(autoGenerate = true)
     @NonNull
     @ColumnInfo(name = "prototype_id")
-    private Integer prototypeId = 0;
+    private Integer prototypeId;
 
     @NonNull
     @ColumnInfo(name="prototype_name")
