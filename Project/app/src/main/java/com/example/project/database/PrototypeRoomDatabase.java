@@ -1,4 +1,4 @@
-package com.example.project;
+package com.example.project.database;
 
 import android.content.Context;
 
@@ -10,22 +10,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 //https://codelabs.developers.google.com/codelabs/android-room-with-a-view/index.html
-@Database(entities = {Prototype.class}, version = 1, exportSchema = false)
-public abstract class LinkRoomDatabase extends RoomDatabase {
+@Database(entities = {Prototype.class, Link.class}, version = 1, exportSchema = false)
+public abstract class PrototypeRoomDatabase extends RoomDatabase {
 
+    public abstract PrototypeDao prototypeDao();
     public abstract LinkDao linkDao();
 
-    private static volatile LinkRoomDatabase INSTANCE;
+    private static volatile PrototypeRoomDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
     static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
-    static LinkRoomDatabase getDatabase(final Context context) {
+    static PrototypeRoomDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
-            synchronized (LinkRoomDatabase.class) {
+            synchronized (PrototypeRoomDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                            LinkRoomDatabase.class, "link_database")
+                            PrototypeRoomDatabase.class, "prototype_database")
                             .build();
                 }
             }

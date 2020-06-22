@@ -1,4 +1,4 @@
-package com.example.project;
+package com.example.project.database;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.project.R;
 
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
     }
 
     private final LayoutInflater mInflater;
-    private List<Prototype> mPrototypes; // Cached copy of links
+    private List<Link> mLinks; // Cached copy of links
 
     LinkListAdapter(Context context) { mInflater = LayoutInflater.from(context); }
 
@@ -34,26 +36,26 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
 
     @Override
     public void onBindViewHolder(LinkViewHolder holder, int position) {
-        if (mPrototypes != null) {
-            Prototype current = mPrototypes.get(position);
+        if (mLinks != null) {
+            Link current = mLinks.get(position);
             holder.linkItemView.setText(current.getLinkName());
         } else {
             // Covers the case of data not being ready yet.
-            holder.linkItemView.setText("No Word");
+            holder.linkItemView.setText("No Link");
         }
     }
 
-    void setLinks(List<Prototype> prototypes){
-        mPrototypes = prototypes;
+    void setLinks(List<Link> links){
+        mLinks = links;
         notifyDataSetChanged();
     }
 
     // getItemCount() is called many times, and when it is first called,
-    // mPrototypes has not been updated (means initially, it's null, and we can't return null).
+    // mLinks has not been updated (means initially, it's null, and we can't return null).
     @Override
     public int getItemCount() {
-        if (mPrototypes != null)
-            return mPrototypes.size();
+        if (mLinks != null)
+            return mLinks.size();
         else return 0;
     }
 }

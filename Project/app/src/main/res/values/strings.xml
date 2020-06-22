@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">Project</string>
-    <string name="add_word">Add Word</string>
+    <string name="hint_proto">Enter prototype name...</string>
+    <string name="create_button">Create</string>
+    <string name="hint_word">Word...</string>
+    <string name="button_save">Save</string>
+    <string name="empty_not_saved">Word not saved because it is empty.</string>
+    <string name="add_word">Word</string>
     <string name="edit_button">Edit</string>
 </resources>
