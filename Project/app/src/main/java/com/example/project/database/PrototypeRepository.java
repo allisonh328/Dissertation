@@ -42,4 +42,6 @@ public class PrototypeRepository {
     }
 
     void delete() { mPrototypeDao.deleteAll(); }
+
+    void deletePrototype(Integer prototypeID) { mPrototypeDao.deletePrototype(prototypeID); }
 }

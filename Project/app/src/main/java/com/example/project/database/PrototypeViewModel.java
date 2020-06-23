@@ -23,4 +23,8 @@ public class PrototypeViewModel extends AndroidViewModel {
     public LiveData<List<Prototype>> getAllPrototypes() { return mAllPrototypes; }
 
     public void insert(Prototype prototype) { mRepository.insert(prototype); }
+
+    public void delete() { mRepository.delete(); }
+
+    public void deletePrototype(Integer prototypeID) { mRepository.deletePrototype(prototypeID);}
 }

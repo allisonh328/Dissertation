@@ -99,12 +99,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //https://developer.android.com/training/basics/firstapp/starting-activity
-    public void editLink(View view) {
+   /* public void editLink(View view) {
         Intent intent = new Intent(this, LinkEditorActivity.class);
         //EditText editText = (EditText) findViewById(R.id.editText);
         //String message = editText.getText().toString();
         //intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
+    }*/
+
+    public void deletePrototype(View view) {}
+
+    public void openPrototype(View view) {
+        //Intent intent = new Intent(this, ViewPrototypeActivity.class);
+
     }
 
     /*public void onActivityResult(int requestCode, int resultCode, Intent data) {

@@ -21,6 +21,9 @@ public interface PrototypeDao {
     @Query("DELETE FROM prototype_table")
     void deleteAll();
 
+    @Query("DELETE FROM prototype_table WHERE prototype_id= :prototypeID")
+    void deletePrototype(Integer prototypeID);
+
     @Query("SELECT * FROM prototype_table")
     LiveData<List<Prototype>> getAllPrototypes();
 

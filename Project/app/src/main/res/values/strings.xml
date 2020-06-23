@@ -7,4 +7,6 @@
     <string name="empty_not_saved">Word not saved because it is empty.</string>
     <string name="add_word">Word</string>
     <string name="edit_button">Edit</string>
+    <string name="open_button">Open</string>
+    <string name="delete_button">Delete</string>
 </resources>
