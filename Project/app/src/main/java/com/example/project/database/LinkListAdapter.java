@@ -38,10 +38,12 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
     public void onBindViewHolder(LinkViewHolder holder, int position) {
         if (mLinks != null) {
             Link current = mLinks.get(position);
-            holder.linkItemView.setText(current.getLinkName());
+            String displayText = current.getLinkName() + Integer.toString(current.getLinkId());
+            holder.linkItemView.setText(displayText);
         } else {
             // Covers the case of data not being ready yet.
-            holder.linkItemView.setText("No Link");
+            String displayText = "No links";
+            holder.linkItemView.setText(displayText);
         }
     }
 

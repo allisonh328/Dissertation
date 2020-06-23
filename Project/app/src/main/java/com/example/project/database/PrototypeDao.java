@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Transaction;
 
 import com.example.project.database.Prototype;
 
@@ -22,4 +23,8 @@ public interface PrototypeDao {
 
     @Query("SELECT * FROM prototype_table")
     LiveData<List<Prototype>> getAllPrototypes();
+
+    @Transaction
+    @Query("SELECT * FROM prototype_table")
+    LiveData<List<PrototypeWithVersions>> getPrototypeWithVersions();
 }

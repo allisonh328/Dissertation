@@ -24,7 +24,7 @@ public class LinkRepository {
         return mAllLinks;
     }
 
-    LiveData<List<Link>> getAllProtoLinks(Integer prototypeID) { return mLinkDao.getAllProtoLinks(prototypeID); }
+    LiveData<List<Link>> getAllVersionLinks(Integer prototypeID) { return mLinkDao.getAllVersionLinks(prototypeID); }
 
     // You must call this on a non-UI thread or your app will throw an exception. Room ensures
     // that you're not doing any long running operations on the main thread, blocking the UI.
@@ -33,4 +33,6 @@ public class LinkRepository {
             mLinkDao.insert(link);
         });
     }
+
+    void delete() { mLinkDao.deleteAll(); }
 }

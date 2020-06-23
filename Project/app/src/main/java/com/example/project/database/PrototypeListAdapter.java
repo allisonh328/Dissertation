@@ -38,10 +38,12 @@ public class PrototypeListAdapter extends RecyclerView.Adapter<PrototypeListAdap
     public void onBindViewHolder(PrototypeListAdapter.PrototypeViewHolder holder, int position) {
         if (mPrototypes != null) {
             Prototype current = mPrototypes.get(position);
-            holder.prototypeItemView.setText(current.getPrototypeName());
+            String displayText = current.getPrototypeName() + Integer.toString(current.getPrototypeId());
+            holder.prototypeItemView.setText(displayText);
         } else {
             // Covers the case of data not being ready yet.
-            holder.prototypeItemView.setText("No prototype");
+            String displayText = "No prototype";
+            holder.prototypeItemView.setText(displayText);
         }
     }
 

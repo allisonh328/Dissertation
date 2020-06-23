@@ -17,10 +17,10 @@ public class LinkViewModel extends AndroidViewModel {
 
     private LiveData<List<Link>> mAllLinks;
 
-    public LinkViewModel (Application application, Integer prototypeID) {
+    public LinkViewModel (Application application, Integer versionID) {
         super(application);
         mRepository = new LinkRepository(application);
-        mAllLinks = mRepository.getAllProtoLinks(prototypeID);
+        mAllLinks = mRepository.getAllVersionLinks(versionID);
     }
 
     LiveData<List<Link>> getAllLinks() { return mAllLinks; }
