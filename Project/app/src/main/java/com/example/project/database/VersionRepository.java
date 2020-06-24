@@ -34,5 +34,9 @@ public class VersionRepository {
         });
     }
 
-    void delete() { mVersionDao.deleteAll(); }
+    void delete() {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mVersionDao.deleteAll();
+        });
+    }
 }

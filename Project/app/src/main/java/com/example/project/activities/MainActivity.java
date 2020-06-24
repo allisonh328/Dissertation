@@ -5,7 +5,6 @@ import com.example.project.database.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,31 +16,24 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
 import com.example.project.R;
-import com.example.project.database.LinkListAdapter;
 import com.example.project.database.PrototypeListAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.ar.core.Anchor;
-import com.google.ar.core.HitResult;
-import com.google.ar.core.Plane;
-import com.google.ar.sceneform.AnchorNode;
-import com.google.ar.sceneform.rendering.ModelRenderable;
-import com.google.ar.sceneform.rendering.ViewRenderable;
-import com.google.ar.sceneform.ux.ArFragment;
-import com.google.ar.sceneform.ux.TransformableNode;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PrototypeListAdapter.OnProtoListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final double MIN_OPENGL_VERSION = 3.0;
     public static final int NEW_PROTOTYPE_ACTIVITY_REQUEST_CODE = 1;
 
     private PrototypeViewModel mPrototypeViewModel;
+    private List<Prototype> protoList;
+
 
 
     @Override@SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
@@ -50,9 +42,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         if (!checkIsSupportedDeviceOrFinish(this)) { return; }
 
-
         RecyclerView recyclerView = findViewById(R.id.recyclerview);
-        final PrototypeListAdapter adapter = new PrototypeListAdapter(this);
+        final PrototypeListAdapter adapter = new PrototypeListAdapter(this, this);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -62,8 +53,10 @@ public class MainActivity extends AppCompatActivity {
             public void onChanged(@Nullable final List<Prototype> prototypes) {
                 // Update the cached copy of the words in the adapter.
                 adapter.setPrototypes(prototypes);
+                protoList = prototypes;
             }
         });
+
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -98,21 +91,26 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    //https://developer.android.com/training/basics/firstapp/starting-activity
-   /* public void editLink(View view) {
-        Intent intent = new Intent(this, LinkEditorActivity.class);
-        //EditText editText = (EditText) findViewById(R.id.editText);
-        //String message = editText.getText().toString();
-        //intent.putExtra(EXTRA_MESSAGE, message);
+    //https://www.youtube.com/watch?v=69C1ljfDvl0
+    @Override
+    public void onProtoClick(int position) {
+        Intent intent = new Intent(this, ViewPrototypeActivity.class);
+        Integer prototypeID = protoList.get(position).getPrototypeId();
+        intent.putExtra("PrototypeID", prototypeID);
         startActivity(intent);
-    }*/
-
-    public void deletePrototype(View view) {}
-
-    public void openPrototype(View view) {
-        //Intent intent = new Intent(this, ViewPrototypeActivity.class);
-
     }
+
+    @Override
+    public void onDeleteClick(int position) {
+        Integer prototypeID = protoList.get(position).getPrototypeId();
+        String prototypeName = protoList.get(position).getPrototypeName();
+        mPrototypeViewModel.deletePrototype(prototypeID);
+        Toast toast =
+                Toast.makeText(this, "Deleted " + prototypeName, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
+    }
+
 
     /*public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

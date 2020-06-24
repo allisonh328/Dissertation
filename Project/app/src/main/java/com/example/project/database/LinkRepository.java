@@ -1,8 +1,10 @@
 package com.example.project.database;
 
 import android.app.Application;
+import android.os.AsyncTask;
 
 import androidx.lifecycle.LiveData;
+import androidx.room.Dao;
 import androidx.room.RoomDatabase;
 
 import java.util.List;
@@ -34,5 +36,10 @@ public class LinkRepository {
         });
     }
 
-    void delete() { mLinkDao.deleteAll(); }
+    void delete() {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mLinkDao.deleteAll();
+        });
+    }
+
 }

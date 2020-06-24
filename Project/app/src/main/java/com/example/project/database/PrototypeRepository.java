@@ -41,7 +41,15 @@ public class PrototypeRepository {
         });
     }
 
-    void delete() { mPrototypeDao.deleteAll(); }
+    void delete() {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mPrototypeDao.deleteAll();
+        });
+    }
 
-    void deletePrototype(Integer prototypeID) { mPrototypeDao.deletePrototype(prototypeID); }
+    void deletePrototype(Integer prototypeID) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mPrototypeDao.deletePrototype(prototypeID);
+        });
+    }
 }
