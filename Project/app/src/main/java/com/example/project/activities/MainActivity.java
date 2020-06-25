@@ -1,5 +1,6 @@
 package com.example.project.activities;
 
+import com.example.project.ComponentCollectionFragment;
 import com.example.project.database.*;
 
 import androidx.annotation.Nullable;
@@ -27,14 +28,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements PrototypeListAdapter.OnProtoListener {
+    public static final String EXTRA_MESSAGE = "com.example.project.activity.MainActivity.MESSAGE";
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final double MIN_OPENGL_VERSION = 3.0;
     public static final int NEW_PROTOTYPE_ACTIVITY_REQUEST_CODE = 1;
+    public static final int VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE = 2;
 
     private PrototypeViewModel mPrototypeViewModel;
     private List<Prototype> protoList;
-
-
 
     @Override@SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +58,6 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
             }
         });
 
-
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
             }
         });
     }
-
 
     //https://www.freecodecamp.org/news/how-to-build-an-augmented-reality-android-app-with-arcore-and-android-studio-43e4676cb36f/
     public static boolean checkIsSupportedDeviceOrFinish(final Activity activity) {
@@ -96,8 +95,8 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
     public void onProtoClick(int position) {
         Intent intent = new Intent(this, ViewPrototypeActivity.class);
         Integer prototypeID = protoList.get(position).getPrototypeId();
-        intent.putExtra("PrototypeID", prototypeID);
-        startActivity(intent);
+        intent.putExtra(EXTRA_MESSAGE, prototypeID);
+        startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
     }
 
     @Override

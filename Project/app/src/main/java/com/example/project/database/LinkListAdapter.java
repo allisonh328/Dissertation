@@ -4,29 +4,43 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.project.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkViewHolder> {
 
     class LinkViewHolder extends RecyclerView.ViewHolder {
         private final TextView linkItemView;
+        private final Button deleteButton;
 
         private LinkViewHolder(View itemView) {
             super(itemView);
             linkItemView = itemView.findViewById(R.id.textView);
+            deleteButton = itemView.findViewById(R.id.button_delete);
         }
+    }
+
+    //https://www.youtube.com/watch?v=69C1ljfDvl0
+    public interface OnLinkListener {
+        void onLinkClick(int position);
+        void onDeleteClick(int position);
     }
 
     private final LayoutInflater mInflater;
     private List<Link> mLinks; // Cached copy of links
+    private OnLinkListener onLinkListener;
 
-    LinkListAdapter(Context context) { mInflater = LayoutInflater.from(context); }
+    public LinkListAdapter(Context context, OnLinkListener onLinkListener) {
+        mInflater = LayoutInflater.from(context);
+        this.onLinkListener = onLinkListener;
+    }
 
     @Override
     public LinkViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -40,6 +54,18 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
             Link current = mLinks.get(position);
             String displayText = current.getLinkName() + Integer.toString(current.getLinkId());
             holder.linkItemView.setText(displayText);
+            holder.linkItemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onLinkListener.onLinkClick(position);
+                }
+            });
+            holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onLinkListener.onDeleteClick(position);
+                }
+            });
         } else {
             // Covers the case of data not being ready yet.
             String displayText = "No links";
@@ -47,9 +73,8 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
         }
     }
 
-    void setLinks(List<Link> links){
+    public void setLinks(List<Link> links){
         mLinks = links;
-        notifyDataSetChanged();
     }
 
     // getItemCount() is called many times, and when it is first called,

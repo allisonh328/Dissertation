@@ -17,8 +17,11 @@ public interface LinkDao {
     @Query("DELETE FROM link_table")
     void deleteAll();
 
-    @Query("SELECT * FROM link_table where version_parent_id = :versionID")
-    LiveData<List<Link>> getAllVersionLinks(Integer versionID);
+    @Query("DELETE FROM link_table WHERE link_id = :linkID")
+    void deleteLink(Integer linkID);
+
+    @Query("SELECT * FROM link_table where proto_parent_id = :prototypeID")
+    LiveData<List<Link>> getAllPrototypeLinks(Integer prototypeID);
 
     @Query("SELECT * FROM link_table")
     LiveData<List<Link>> getAllLinks();

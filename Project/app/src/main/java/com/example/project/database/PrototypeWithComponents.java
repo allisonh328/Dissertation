@@ -5,12 +5,18 @@ import androidx.room.Relation;
 
 import java.util.List;
 
-public class PrototypeWithVersions {
+public class PrototypeWithComponents {
     @Embedded public Prototype prototype;
 
     @Relation(
             parentColumn = "prototype_id",
             entityColumn = "proto_parent_id"
     )
-    public List<ProtoVersion> version;
+    public List<Joint> joint;
+
+    @Relation(
+            parentColumn = "prototype_id",
+            entityColumn = "proto_parent_id"
+    )
+    public List<Link> link;
 }

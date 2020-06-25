@@ -9,4 +9,6 @@
     <string name="edit_button">Edit</string>
     <string name="open_button">Open</string>
     <string name="delete_button">Delete</string>
+    <string name="link_button">View Links</string>
+    <string name="joint_button">View Joints</string>
 </resources>

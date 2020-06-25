@@ -27,7 +27,10 @@ public interface PrototypeDao {
     @Query("SELECT * FROM prototype_table")
     LiveData<List<Prototype>> getAllPrototypes();
 
+    @Query("SELECT * FROM prototype_table WHERE prototype_id= :prototypeID")
+    LiveData<Prototype> getPrototype(Integer prototypeID);
+
     @Transaction
-    @Query("SELECT * FROM prototype_table")
-    LiveData<List<PrototypeWithVersions>> getPrototypeWithVersions();
+    @Query("SELECT * FROM prototype_table WHERE prototype_id= :prototypeID")
+    LiveData<PrototypeWithComponents> getPrototypeWithComponents (Integer prototypeID);
 }

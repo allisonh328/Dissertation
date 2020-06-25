@@ -14,7 +14,7 @@ import com.example.project.database.PrototypeViewModel;
 
 public class AddPrototypeActivity extends AppCompatActivity {
 
-    public static final String EXTRA_MESSAGE = "com.example.myfirstapp.MESSAGE";
+    public static final String EXTRA_MESSAGE = "com.example.project.activity.AddPrototypeActivity.MESSAGE";
     public static final int NEW_PROTOTYPE_ACTIVITY_REQUEST_CODE = 1;
 
     private PrototypeViewModel mPrototypeViewModel;
@@ -32,6 +32,7 @@ public class AddPrototypeActivity extends AppCompatActivity {
         String name = editText.getText().toString();
         Prototype prototype = new Prototype();
         prototype.setPrototypeName(name);
+        Integer prototypeID = prototype.getPrototypeId();
         mPrototypeViewModel.insert(prototype);
         intent.putExtra(EXTRA_MESSAGE, name);
         startActivityForResult(intent, NEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);

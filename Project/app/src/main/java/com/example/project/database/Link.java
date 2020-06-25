@@ -9,11 +9,11 @@ import androidx.room.PrimaryKey;
 
 //https://codelabs.developers.google.com/codelabs/android-room-with-a-view/index.html
 @Entity(tableName = "link_table",
-        foreignKeys = @ForeignKey(entity = ProtoVersion.class,
-            parentColumns = "version_id",
-            childColumns = "version_parent_id",
+        foreignKeys = @ForeignKey(entity = Prototype.class,
+            parentColumns = "prototype_id",
+            childColumns = "proto_parent_id",
             onDelete = ForeignKey.CASCADE),
-        indices = {@Index(value = {"version_parent_id"}, unique = true)})
+        indices = {@Index(value = {"proto_parent_id"}, unique = true)})
 public class Link {
 
     @PrimaryKey(autoGenerate = true)
@@ -26,10 +26,10 @@ public class Link {
     private String linkName;
 
     @NonNull
-    @ColumnInfo(name="version_parent_id")
+    @ColumnInfo(name="proto_parent_id")
     private Integer parentID;
 
-    public Link(Integer parentID) {}
+    public Link() {}
 
     public void setLinkId(@NonNull Integer linkID) { this.linkId = linkID; }
 
