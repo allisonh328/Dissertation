@@ -28,6 +28,8 @@ public class JointViewModel extends AndroidViewModel {
         return mRepository.getAllPrototypeJoints(prototypeID);
     }
 
+    public LiveData<Joint> getJoint(String jointName) { return mRepository.getJoint(jointName); }
+
     public void insert(Joint joint) { mRepository.insert(joint); }
 
     public void deleteJoint(Integer jointID) { mRepository.deleteJoint(jointID); }

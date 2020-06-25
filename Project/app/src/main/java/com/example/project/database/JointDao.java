@@ -26,4 +26,7 @@ public interface JointDao {
     @Query("SELECT * FROM joint_table")
     LiveData<List<Joint>> getAllJoints();
 
+    @Query("SELECT * FROM joint_table WHERE joint_name = :jointName")
+    LiveData<Joint> getJoint(String jointName);
+
 }

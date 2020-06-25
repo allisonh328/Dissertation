@@ -22,9 +22,10 @@ import androidx.room.PrimaryKey;
                 parentColumns = "prototype_id",
                 childColumns = "proto_parent_id",
                 onDelete = ForeignKey.CASCADE)},
-        indices = {@Index(value = {"link1_parent_id"}),
-                @Index(value = {"link2_parent_id"}),
-                @Index(value = {"proto_parent_id"})})
+        indices = {@Index("link1_parent_id"),
+                @Index("link2_parent_id"),
+                @Index("proto_parent_id"),
+                @Index(value = {"joint_name"}, unique = true)})
 public class Joint {
 
     @PrimaryKey(autoGenerate = true)

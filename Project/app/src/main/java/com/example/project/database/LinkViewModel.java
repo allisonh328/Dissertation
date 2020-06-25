@@ -25,7 +25,11 @@ public class LinkViewModel extends AndroidViewModel {
 
     public LiveData<List<Link>> getAllLinks() { return mAllLinks; }
 
-    public LiveData<List<Link>> getAllProtoLinks(Integer prototypeID) { return mRepository.getAllPrototypeLinks(prototypeID); }
+    public LiveData<List<Link>> getAllProtoLinks(Integer prototypeID) {
+        return mRepository.getAllPrototypeLinks(prototypeID);
+    }
+
+    public LiveData<Link> getLink(String linkName) { return mRepository.getLink(linkName); }
 
     public void insert(Link link) { mRepository.insert(link); }
 

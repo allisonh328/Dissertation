@@ -23,6 +23,8 @@ public class JointRepository {
         return mJointDao.getAllProtoJoints(prototypeID);
     }
 
+    LiveData<Joint> getJoint(String jointName) { return mJointDao.getJoint(jointName); }
+
     void insert(Joint joint) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mJointDao.insert(joint);

@@ -25,4 +25,7 @@ public interface LinkDao {
 
     @Query("SELECT * FROM link_table")
     LiveData<List<Link>> getAllLinks();
+
+    @Query("SELECT * FROM link_table WHERE link_name = :linkName")
+    LiveData<Link> getLink(String linkName);
 }

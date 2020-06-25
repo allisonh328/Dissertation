@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 //https://codelabs.developers.google.com/codelabs/android-room-with-a-view/index.html
-@Database(entities = {Prototype.class, Link.class, Joint.class}, version = 3, exportSchema = false)
+@Database(entities = {Prototype.class, Link.class, Joint.class}, version = 5, exportSchema = false)
 public abstract class PrototypeRoomDatabase extends RoomDatabase {
 
     public abstract PrototypeDao prototypeDao();

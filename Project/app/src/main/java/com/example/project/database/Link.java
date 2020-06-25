@@ -13,7 +13,8 @@ import androidx.room.PrimaryKey;
             parentColumns = "prototype_id",
             childColumns = "proto_parent_id",
             onDelete = ForeignKey.CASCADE),
-        indices = {@Index(value = {"proto_parent_id"}, unique = true)})
+        indices = {@Index("proto_parent_id"),
+                    @Index(value = {"link_name"}, unique = true)})
 public class Link {
 
     @PrimaryKey(autoGenerate = true)

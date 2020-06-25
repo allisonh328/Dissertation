@@ -94,8 +94,8 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
     @Override
     public void onProtoClick(int position) {
         Intent intent = new Intent(this, ViewPrototypeActivity.class);
-        Integer prototypeID = protoList.get(position).getPrototypeId();
-        intent.putExtra(EXTRA_MESSAGE, prototypeID);
+        String prototypeName = protoList.get(position).getPrototypeName();
+        intent.putExtra(EXTRA_MESSAGE, prototypeName);
         startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
     }
 

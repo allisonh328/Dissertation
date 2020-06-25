@@ -44,10 +44,10 @@ public class ViewPrototypeActivity extends AppCompatActivity {
 
         // Set the Title of the screen to the Prototype name
         Intent intent = getIntent();
-        Integer prototypeID = intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 0);
+        String prototypeName = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
 
         mPrototypeViewModel = new ViewModelProvider(this).get(PrototypeViewModel.class);
-        mPrototypeViewModel.getPrototype(prototypeID).observe(this, new Observer<Prototype>() {
+        mPrototypeViewModel.getPrototype(prototypeName).observe(this, new Observer<Prototype>() {
             @Override
             public void onChanged(@Nullable final Prototype prototype) {
                 // Update the cached copy of the words in the adapter.

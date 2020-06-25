@@ -31,7 +31,7 @@ public class PrototypeRepository {
         return mAllPrototypes;
     }
 
-    LiveData<Prototype> getPrototype(Integer prototypeID) { return mPrototypeDao.getPrototype(prototypeID); }
+    LiveData<Prototype> getPrototype(String prototypeName) { return mPrototypeDao.getPrototype(prototypeName); }
 
     LiveData<PrototypeWithComponents> getPrototypeWithComponents(Integer prototypeID) {
         return mPrototypeDao.getPrototypeWithComponents(prototypeID);
@@ -42,8 +42,7 @@ public class PrototypeRepository {
     void insert(Prototype prototype) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mPrototypeDao.insert(prototype);
-        });
-    }
+        }); }
 
     void delete() {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
