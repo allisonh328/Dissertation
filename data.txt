@@ -1,0 +1,28 @@
+Simple Canny with Houghlines:
+#lines = 36 - 51
+time elapsed = 27000000 - 44000000
+
+Above + Gaussian blur with 3x3 kernal size, sigmax & sigmay 0:
+#lines 56 - 79
+time elapsed = 55000000 - 82000000
+
+Above + Gaussian Blur with 3x3 kernal, sigmax 0 sigmay 1:
+#lines 51 - 71
+time elapsed = 51000000 - 77000000
+
+Above + Gaussian Blur with 3x3 kernal, sigmax 1 sigmay 1:
+#lines 56 - 72
+time elapsed = 59000000 - 82000000
+
+Above + Gaussian Blur with 5x5 kernal, sigmax 0 sigmay 0:
+#lines 69 - 181
+time elapsed = 71000000 - 121000000
+(added a lot of noise)
+
+Above + Gaussian Blur with 3x3 kernal, sigmax 0 sigmay 2:
+#lines 55 - 92
+time elapsed = 53000000 - 106000000
+
+Simple Canny with Houghlines:
+#lines = 33 - 59
+time elapsed = 27000000 - 44000000

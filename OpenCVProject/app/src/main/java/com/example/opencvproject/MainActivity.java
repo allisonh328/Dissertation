@@ -6,6 +6,9 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -23,6 +26,7 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 import org.opencv.core.Rect;
@@ -30,21 +34,21 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, CameraBridgeViewBase.CvCameraViewListener2 {
 
-    private static final String  TAG              = "ALLISON_COMMENT";
+    private static final String TAG = "ALLISON_COMMENT";
 
-    private boolean              mIsEdgeViewSelected = false;
-    private Mat                  mRgba;
-    private Mat                  houghLines;
-    private Scalar               mBlobColorRgba;
-    private Scalar               mBlobColorHsv;
-    //private ColorBlobDetector    mDetector;
-    private Mat                  mSpectrum;
-    private Size                 SPECTRUM_SIZE;
-    private Scalar               CONTOUR_COLOR;
+    private boolean mIsEdgeViewSelected = true;
+    private Mat mRgba;
+    ArrayList<Point> centers;
+    ArrayList<Point> lines;
 
     private CameraBridgeViewBase mOpenCvCameraView;
     private final int MY_PERMISSIONS_REQUEST_USE_CAMERA = 0x00AF;
@@ -145,15 +149,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void onCameraViewStarted(int width, int height) {
         Log.i(TAG, "MainActivity.onCameraViewStarted: Camera starting.");
         mRgba = new Mat(height, width, CvType.CV_8UC4);
+        centers = new ArrayList<>();
+        lines = new ArrayList<>();
         if(mRgba == null) {
             Log.i(TAG, "MainActivity.onCameraViewStarted: Initialized incorrectly.");
         }
-        //mDetector = new ColorBlobDetector();
-        mSpectrum = new Mat();
-        mBlobColorRgba = new Scalar(255);
-        mBlobColorHsv = new Scalar(255);
-        SPECTRUM_SIZE = new Size(200, 64);
-        CONTOUR_COLOR = new Scalar(255,0,0,255);
     }
 
     @Override
@@ -161,48 +161,109 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         mRgba.release();
     }
 
-    // https://www.programcreek.com/java-api-examples/?class=org.opencv.imgproc.Imgproc&method=HoughLinesP
+    // https://stackoverflow.com/questions/22863842/how-to-make-circle-clickable
     @Override
     public boolean onTouch(View v, MotionEvent event) {
 
-        if(mIsEdgeViewSelected == true) {
-            mIsEdgeViewSelected = false;
-        } else {
-            mIsEdgeViewSelected = true;
+        super.onTouchEvent(event);
+
+        Log.i(TAG, "MainActivity.onTouch: Touched for the very first time.");
+        if (event.getAction() != MotionEvent.ACTION_DOWN && event.getAction() != MotionEvent.ACTION_POINTER_DOWN) {
+            Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
+            return true;
+        }
+        if (centers.isEmpty()) {
+            Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
+            return true;
         }
 
-        return false; // don't need subsequent touch events
+        float maxDistance = 300;
+
+        for (Point center: centers) {
+            if (Math.abs(center.x - event.getX()) < maxDistance && Math.abs(center.y - event.getY()) < maxDistance) {
+                lines.add(center);
+                Log.i(TAG, "MainActivity.onTouch: Center collected!");
+            }
+        }
+
+        Log.i(TAG, "MainActivity.onTouch: I can go the distance");
+        return true;
     }
 
+    // https://stackoverflow.com/questions/31504366/opencv-for-java-houghcircles-finding-all-the-wrong-circles
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
+        centers.clear();
         Mat bwMat = new Mat();
-        Mat lines = new Mat();
-        Mat canny = new Mat();
-        houghLines = new Mat();
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat threshImage = new Mat();
 
-        Log.i(TAG, "MainActivity.onCameraFrame: Just checking");
         if (mIsEdgeViewSelected) {
+            long startTime = System.nanoTime();
 
             Imgproc.cvtColor(mRgba, bwMat, Imgproc.COLOR_BGR2GRAY);
-            Imgproc.Canny(bwMat, canny, 80, 120);
-            Imgproc.HoughLinesP(canny, lines, 1, Math.PI / 180, 50, 20, 20);
-            houghLines.create(canny.rows(), canny.cols(), CvType.CV_8UC1);
+            Core.inRange(bwMat, new Scalar(0, 0, 0), new Scalar(20, 20, 10), threshImage);
+            Imgproc.blur(threshImage, threshImage, new Size(3, 3));
+            Imgproc.threshold(threshImage, threshImage, 200, 255, Imgproc.THRESH_BINARY);
 
-            for (int i = 0; i < lines.rows(); i++) {
-                double[] points = lines.get(i, 0);
+            Imgproc.findContours(threshImage, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-                Point pt1 = new Point(points[0], points[1]);
-                Point pt2 = new Point(points[2], points[3]);
+            double minArea = 8;
+            float[] radius = new float[1];
 
-                //Drawing lines on an image
-                Imgproc.line(houghLines, pt1, pt2, new Scalar(255, 0, 0), 1);
+
+            for (int i = 0; i < contours.size(); i++) {
+                MatOfPoint c1 = contours.get(i);
+                if (Imgproc.contourArea(c1) > minArea) {
+                    MatOfPoint2f c2f = new MatOfPoint2f(c1.toArray());
+                    Point center = new Point();
+                    Imgproc.minEnclosingCircle(c2f, center, radius);
+                    centers.add(center);
+                    Log.i(TAG, "MainActivity.onCameraFrame: center at (" + Double.toString(center.x) + "," + Double.toString(center.y) + ")");
+                    Imgproc.circle(mRgba, center, (int) radius[0], new Scalar(0, 240, 0), 2);
+                }
             }
-            return houghLines;
-        } else {
-            return mRgba;
+
+            Log.i(TAG, "MainActivity.onCameraFrame: # contours = " + Long.toString(centers.size()));
+           /* MyMath maths = new MyMath();
+            ArrayList<Double[]> lines = maths.drawLines(centers);
+            Log.i(TAG, "MainActivity.onCameraFrame: # lines = " + Long.toString(lines.size()));
+            /*Imgproc.Canny(bwMat, canny, 80, 120);
+            //Imgproc.HoughLinesP(canny, lines, 1, Math.PI / 180, 50, 20, 20);
+            Imgproc.GaussianBlur(canny, canny, new Size(5, 5), 2, 2);
+            Imgproc.HoughCircles(canny, lines, Imgproc.HOUGH_GRADIENT, 1.5, 5, 50, 30, 0, 30);
+            houghLines.create(canny.rows(), canny.cols(), CvType.CV_8UC1);
+            Log.i(TAG, "MainActivity.onCameraFrame: # circles = " + Integer.toString(lines.rows()));
+            //MyMath myMath = new MyMath();
+            //houghLines = myMath.combineLines(lines, canny);
+            for (int i = 0; i < lines.size(); i++) {
+                Double[] points = lines.get(i);
+
+                Point point1 = new Point(points[0], points[1]);
+                Point point2 = new Point(points[2], points[3]);
+
+                Path linePath = new Path();
+                RectF rectF = new RectF();
+
+                linePath.moveTo((float) point1.x, (float) point1.y);
+                linePath.lineTo((float) point2.x, (float) point2.y);
+
+                Imgproc.line(mRgba, point1, point2, new Scalar(0, 0, 240), 2);
+
+                Log.i(TAG, "MainActivity.onCameraFrame: line from (" + Double.toString(point1.x) + "," + Double.toString(point1.y) + ") to (" + Double.toString(point2.x) + "," + Double.toString(point2.y) + ")");
+                linePath.computeBounds(rectF, true);
+            }*/
+
+            long stopTime = System.nanoTime();
+            Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                Log.e(TAG, ie.getMessage());
+            }
         }
+        return mRgba;
     }
 
     private Scalar converScalarHsv2Rgba(Scalar hsvColor) {
