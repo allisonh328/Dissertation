@@ -141,8 +141,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             createButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-
+                    if(lines.size() < 2) {
+                        Toast.makeText(MainActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
+                        createLink = false;
+                        return;
+                    } else {
+                        Imgproc.line(mRgba, lines.get(0), lines.get(1), new Scalar(0, 0, 240), 5);
+                        createLink = false;
+                        lines.clear();
+                        createButton.setVisibility(View.GONE);
+                        return;
+                    }
                 }
             });
             return true;
@@ -227,14 +236,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
 
         if(!createLink) {
-            /*if(paused) {
-                onResume();
-            } else {
-                mOpenCvCameraView.disableView();
-                Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mRgba, bitmap);
-                mOpenCvCameraView.set
-            }*/
             paused = !paused;
             Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
         } else {
@@ -277,10 +278,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
             long startTime = System.nanoTime();
 
-            /*for (Point line : lines) {
-                Imgproc.circle(mRgba, line, (int) 5, new Scalar(0, 0, 240), -1);
-            }*/
-
             Imgproc.cvtColor(mRgba, bwMat, Imgproc.COLOR_BGR2GRAY);
             Core.inRange(bwMat, new Scalar(0, 0, 0), new Scalar(20, 20, 10), threshImage);
             Imgproc.blur(threshImage, threshImage, new Size(3, 3));
@@ -305,34 +302,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
 
             Log.i(TAG, "MainActivity.onCameraFrame: # contours = " + Long.toString(centers.size()));
-       /* MyMath maths = new MyMath();
-        ArrayList<Double[]> lines = maths.drawLines(centers);
-        Log.i(TAG, "MainActivity.onCameraFrame: # lines = " + Long.toString(lines.size()));
-        /*Imgproc.Canny(bwMat, canny, 80, 120);
-        //Imgproc.HoughLinesP(canny, lines, 1, Math.PI / 180, 50, 20, 20);
-        Imgproc.GaussianBlur(canny, canny, new Size(5, 5), 2, 2);
-        Imgproc.HoughCircles(canny, lines, Imgproc.HOUGH_GRADIENT, 1.5, 5, 50, 30, 0, 30);
-        houghLines.create(canny.rows(), canny.cols(), CvType.CV_8UC1);
-        Log.i(TAG, "MainActivity.onCameraFrame: # circles = " + Integer.toString(lines.rows()));
-        //MyMath myMath = new MyMath();
-        //houghLines = myMath.combineLines(lines, canny);
-        for (int i = 0; i < lines.size(); i++) {
-            Double[] points = lines.get(i);
-
-            Point point1 = new Point(points[0], points[1]);
-            Point point2 = new Point(points[2], points[3]);
-
-            Path linePath = new Path();
-            RectF rectF = new RectF();
-
-            linePath.moveTo((float) point1.x, (float) point1.y);
-            linePath.lineTo((float) point2.x, (float) point2.y);
-
-            Imgproc.line(mRgba, point1, point2, new Scalar(0, 0, 240), 2);
-
-            Log.i(TAG, "MainActivity.onCameraFrame: line from (" + Double.toString(point1.x) + "," + Double.toString(point1.y) + ") to (" + Double.toString(point2.x) + "," + Double.toString(point2.y) + ")");
-            linePath.computeBounds(rectF, true);
-        }*/
 
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
@@ -345,12 +314,5 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return mRgba;
     }
 
-    private Scalar converScalarHsv2Rgba(Scalar hsvColor) {
-        Mat pointMatRgba = new Mat();
-        Mat pointMatHsv = new Mat(1, 1, CvType.CV_8UC3, hsvColor);
-        Imgproc.cvtColor(pointMatHsv, pointMatRgba, Imgproc.COLOR_HSV2RGB_FULL, 4);
-
-        return new Scalar(pointMatRgba.get(0, 0));
-    }
 }
 

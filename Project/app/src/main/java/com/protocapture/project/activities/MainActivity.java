@@ -4,6 +4,7 @@ import com.protocapture.project.database.*;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -41,6 +42,10 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (!checkIsSupportedDeviceOrFinish(this)) { return; }
+
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        myToolbar.setTitle("ProtoCapture");
 
         RecyclerView recyclerView = findViewById(R.id.recyclerview);
         final PrototypeListAdapter adapter = new PrototypeListAdapter(this, this);
