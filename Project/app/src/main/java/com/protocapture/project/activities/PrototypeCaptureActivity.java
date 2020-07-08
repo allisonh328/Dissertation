@@ -6,12 +6,15 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.content.Intent;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.protocapture.project.R;
@@ -28,6 +31,10 @@ import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import org.opencv.core.Mat;
+
+import java.util.ArrayList;
+
 public class PrototypeCaptureActivity extends AppCompatActivity {
     public static final int LINK_EDITOR_REQUEST_CODE = 1;
     private static final String TAG = "ALLISON";
@@ -42,9 +49,15 @@ public class PrototypeCaptureActivity extends AppCompatActivity {
     private static Integer fakeID = 1;
     private View itemView;
 
+    private Mat mRgba;
+    ArrayList<Point> centers;
+    ArrayList<Point> lines;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_prototype_capture);
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
         mInflater = LayoutInflater.from(this);
@@ -67,18 +80,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity {
             }
         });
 
-             /* ModelRenderable.builder()
-                .setSource(this, Uri.parse("fox.sfb"))
-                .build()
-                .thenAccept(renderable -> foxRenderable = renderable)
-                .exceptionally(throwable -> {
-                    Toast toast =
-                            Toast.makeText(this, "Unable to load andy renderable", Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.CENTER, 0, 0);
-                    toast.show();
-                    return null;
-                }); */
-
         ViewGroup viewGroup = findViewById(R.id.renderable);
         itemView = mInflater.inflate(R.layout.hello_view, viewGroup, false);
         //TextView view = itemView.findViewById(R.id.textView2);
@@ -91,27 +92,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity {
         //https://www.freecodecamp.org/news/how-to-build-an-augmented-reality-android-app-with-arcore-and-android-studio-43e4676cb36f/
         arFragment.setOnTapArPlaneListener(
                 (HitResult hitresult, Plane plane, MotionEvent motionevent) -> {
-                    if (helloRenderable == null){ return; }
-                    ViewRenderable linkRenderable = helloRenderable.makeCopy();
-                    Anchor anchor = hitresult.createAnchor();
-                    AnchorNode anchorNode = new AnchorNode(anchor);
-                    anchorNode.setParent(arFragment.getArSceneView().getScene());
-                    TransformableNode hello = new TransformableNode(arFragment.getTransformationSystem());
-                    hello.getScaleController().setMaxScale(0.2f);
-                    hello.getScaleController().setMinScale(0.1f);
-                    mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
-                    Link link = new Link();
-                    String linkName = "Link" + Integer.toString(fakeID);
-                    fakeID++;
-                    link.setLinkName(linkName);
-                    link.setParentID(mPrototype.getPrototypeId());
-                    Log.d(TAG, "onChanged: prototypeID = " + Integer.toString(mPrototype.getPrototypeId()));
-                    mLinkViewModel.insert(link);
-                    TextView view = itemView.findViewById(R.id.textView2);
-                    view.setText(link.getLinkName());
-                    hello.setParent(anchorNode);
-                    hello.setRenderable(linkRenderable);
-                    hello.select();
+                    onHit(hitresult, plane, motionevent);
                 });
     }
 
@@ -122,5 +103,29 @@ public class PrototypeCaptureActivity extends AppCompatActivity {
         String name = textView.getText().toString();
         intent.putExtra("link_name", name);
         startActivityForResult(intent, LINK_EDITOR_REQUEST_CODE);
+    }
+
+    private void onHit(HitResult hitResult, Plane plane, MotionEvent motionEvent) {
+        if (helloRenderable == null){ return; }
+        ViewRenderable linkRenderable = helloRenderable.makeCopy();
+        Anchor anchor = hitResult.createAnchor();
+        AnchorNode anchorNode = new AnchorNode(anchor);
+        anchorNode.setParent(arFragment.getArSceneView().getScene());
+        TransformableNode hello = new TransformableNode(arFragment.getTransformationSystem());
+        hello.getScaleController().setMaxScale(0.2f);
+        hello.getScaleController().setMinScale(0.1f);
+        mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
+        Link link = new Link();
+        String linkName = "Link" + Integer.toString(fakeID);
+        fakeID++;
+        link.setLinkName(linkName);
+        link.setParentID(mPrototype.getPrototypeId());
+        Log.d(TAG, "onChanged: prototypeID = " + Integer.toString(mPrototype.getPrototypeId()));
+        mLinkViewModel.insert(link);
+        TextView view = itemView.findViewById(R.id.textView2);
+        view.setText(link.getLinkName());
+        hello.setParent(anchorNode);
+        hello.setRenderable(linkRenderable);
+        hello.select();
     }
 }

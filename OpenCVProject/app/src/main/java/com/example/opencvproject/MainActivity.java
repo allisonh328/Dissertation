@@ -1,28 +1,35 @@
 package com.example.opencvproject;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -45,10 +52,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private static final String TAG = "ALLISON_COMMENT";
 
-    private boolean mIsEdgeViewSelected = true;
+    private boolean createLink = false;
+    private boolean paused = false;
     private Mat mRgba;
-    ArrayList<Point> centers;
-    ArrayList<Point> lines;
+    private ArrayList<Point> centers;
+    private ArrayList<Point> lines;
+    private Button createButton;
+    private int height;
+    private int width;
 
     private CameraBridgeViewBase mOpenCvCameraView;
     private final int MY_PERMISSIONS_REQUEST_USE_CAMERA = 0x00AF;
@@ -84,6 +95,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        createButton = (Button) findViewById(R.id.button_create);
+        createButton.bringToFront();
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        height = displayMetrics.heightPixels;
+        width = displayMetrics.widthPixels;
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA ) != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG,"Permission not available requesting permission");
             ActivityCompat.requestPermissions(this,
@@ -95,6 +116,39 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
             mOpenCvCameraView.setCvCameraViewListener(this);
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.capture_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_add) {
+            createLink = true;
+            Toast.makeText(MainActivity.this, "Select endpoints first, then any other joints on the link.\n" +
+                    "Click 'Create' to create link.", Toast.LENGTH_LONG).show();
+            createButton.setVisibility(View.VISIBLE);
+            createButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+
+                }
+            });
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -167,22 +221,43 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         super.onTouchEvent(event);
 
-        Log.i(TAG, "MainActivity.onTouch: Touched for the very first time.");
         if (event.getAction() != MotionEvent.ACTION_DOWN && event.getAction() != MotionEvent.ACTION_POINTER_DOWN) {
-            Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
-            return true;
-        }
-        if (centers.isEmpty()) {
-            Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
+            //Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
             return true;
         }
 
-        float maxDistance = 300;
+        if(!createLink) {
+            /*if(paused) {
+                onResume();
+            } else {
+                mOpenCvCameraView.disableView();
+                Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(mRgba, bitmap);
+                mOpenCvCameraView.set
+            }*/
+            paused = !paused;
+            Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
+        } else {
+            if (centers.isEmpty()) {
+                Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
+                return true;
+            }
 
-        for (Point center: centers) {
-            if (Math.abs(center.x - event.getX()) < maxDistance && Math.abs(center.y - event.getY()) < maxDistance) {
-                lines.add(center);
-                Log.i(TAG, "MainActivity.onTouch: Center collected!");
+            float maxDistance = 100;
+
+            for (Point center : centers) {
+                float xTouch = (event.getX() / width) * mRgba.cols();
+                float yTouch = (event.getY() / height) * mRgba.rows();
+                Log.i(TAG, "MainActivity.onTouch: Touch at (" + Float.toString(xTouch) + "," + Float.toString(yTouch) + ")");
+                if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
+                    Imgproc.circle(mRgba, center, 8, new Scalar(240, 0, 0), -1);
+                    lines.add(center);
+                    Log.i(TAG, "*********************");
+                    Log.i(TAG, "MainActivity.onTouch: Center at (" + Double.toString(center.x) + "," + Double.toString(center.y) + ")");
+                    Log.i(TAG, "MainActivity.onTouch: I can go the distance");
+                    Log.i(TAG, "*********************");
+                    return true;
+                }
             }
         }
 
@@ -193,14 +268,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     // https://stackoverflow.com/questions/31504366/opencv-for-java-houghcircles-finding-all-the-wrong-circles
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
-        centers.clear();
-        Mat bwMat = new Mat();
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat threshImage = new Mat();
+        if(!paused) {
+            mRgba = inputFrame.rgba();
+            centers.clear();
+            Mat bwMat = new Mat();
+            List<MatOfPoint> contours = new ArrayList<>();
+            Mat threshImage = new Mat();
 
-        if (mIsEdgeViewSelected) {
             long startTime = System.nanoTime();
+
+            /*for (Point line : lines) {
+                Imgproc.circle(mRgba, line, (int) 5, new Scalar(0, 0, 240), -1);
+            }*/
 
             Imgproc.cvtColor(mRgba, bwMat, Imgproc.COLOR_BGR2GRAY);
             Core.inRange(bwMat, new Scalar(0, 0, 0), new Scalar(20, 20, 10), threshImage);
@@ -226,34 +305,34 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
 
             Log.i(TAG, "MainActivity.onCameraFrame: # contours = " + Long.toString(centers.size()));
-           /* MyMath maths = new MyMath();
-            ArrayList<Double[]> lines = maths.drawLines(centers);
-            Log.i(TAG, "MainActivity.onCameraFrame: # lines = " + Long.toString(lines.size()));
-            /*Imgproc.Canny(bwMat, canny, 80, 120);
-            //Imgproc.HoughLinesP(canny, lines, 1, Math.PI / 180, 50, 20, 20);
-            Imgproc.GaussianBlur(canny, canny, new Size(5, 5), 2, 2);
-            Imgproc.HoughCircles(canny, lines, Imgproc.HOUGH_GRADIENT, 1.5, 5, 50, 30, 0, 30);
-            houghLines.create(canny.rows(), canny.cols(), CvType.CV_8UC1);
-            Log.i(TAG, "MainActivity.onCameraFrame: # circles = " + Integer.toString(lines.rows()));
-            //MyMath myMath = new MyMath();
-            //houghLines = myMath.combineLines(lines, canny);
-            for (int i = 0; i < lines.size(); i++) {
-                Double[] points = lines.get(i);
+       /* MyMath maths = new MyMath();
+        ArrayList<Double[]> lines = maths.drawLines(centers);
+        Log.i(TAG, "MainActivity.onCameraFrame: # lines = " + Long.toString(lines.size()));
+        /*Imgproc.Canny(bwMat, canny, 80, 120);
+        //Imgproc.HoughLinesP(canny, lines, 1, Math.PI / 180, 50, 20, 20);
+        Imgproc.GaussianBlur(canny, canny, new Size(5, 5), 2, 2);
+        Imgproc.HoughCircles(canny, lines, Imgproc.HOUGH_GRADIENT, 1.5, 5, 50, 30, 0, 30);
+        houghLines.create(canny.rows(), canny.cols(), CvType.CV_8UC1);
+        Log.i(TAG, "MainActivity.onCameraFrame: # circles = " + Integer.toString(lines.rows()));
+        //MyMath myMath = new MyMath();
+        //houghLines = myMath.combineLines(lines, canny);
+        for (int i = 0; i < lines.size(); i++) {
+            Double[] points = lines.get(i);
 
-                Point point1 = new Point(points[0], points[1]);
-                Point point2 = new Point(points[2], points[3]);
+            Point point1 = new Point(points[0], points[1]);
+            Point point2 = new Point(points[2], points[3]);
 
-                Path linePath = new Path();
-                RectF rectF = new RectF();
+            Path linePath = new Path();
+            RectF rectF = new RectF();
 
-                linePath.moveTo((float) point1.x, (float) point1.y);
-                linePath.lineTo((float) point2.x, (float) point2.y);
+            linePath.moveTo((float) point1.x, (float) point1.y);
+            linePath.lineTo((float) point2.x, (float) point2.y);
 
-                Imgproc.line(mRgba, point1, point2, new Scalar(0, 0, 240), 2);
+            Imgproc.line(mRgba, point1, point2, new Scalar(0, 0, 240), 2);
 
-                Log.i(TAG, "MainActivity.onCameraFrame: line from (" + Double.toString(point1.x) + "," + Double.toString(point1.y) + ") to (" + Double.toString(point2.x) + "," + Double.toString(point2.y) + ")");
-                linePath.computeBounds(rectF, true);
-            }*/
+            Log.i(TAG, "MainActivity.onCameraFrame: line from (" + Double.toString(point1.x) + "," + Double.toString(point1.y) + ") to (" + Double.toString(point2.x) + "," + Double.toString(point2.y) + ")");
+            linePath.computeBounds(rectF, true);
+        }*/
 
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
