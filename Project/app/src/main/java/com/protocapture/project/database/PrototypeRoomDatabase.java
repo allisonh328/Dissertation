@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 //https://codelabs.developers.google.com/codelabs/android-room-with-a-view/index.html
-@Database(entities = {Prototype.class, Link.class, Joint.class}, version = 5, exportSchema = false)
+@Database(entities = {Prototype.class, Link.class, Joint.class}, version = 10, exportSchema = false)
 public abstract class PrototypeRoomDatabase extends RoomDatabase {
 
     public abstract PrototypeDao prototypeDao();
@@ -55,7 +55,6 @@ public abstract class PrototypeRoomDatabase extends RoomDatabase {
                 ldao.deleteAll();
                 JointDao jdao = INSTANCE.jointDao();
                 jdao.deleteAll();
-
                 /*Word word = new Word("Hello");
                 dao.insert(word);
                 word = new Word("World");

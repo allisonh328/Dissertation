@@ -3,6 +3,7 @@ package com.protocapture.project.activities;
 import com.protocapture.project.database.*;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.Observer;
@@ -46,6 +47,11 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
         myToolbar.setTitle("ProtoCapture");
+        // Get a support ActionBar corresponding to this toolbar
+        ActionBar ab = getSupportActionBar();
+
+        // Enable the Up button
+        ab.setDisplayHomeAsUpEnabled(true);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerview);
         final PrototypeListAdapter adapter = new PrototypeListAdapter(this, this);

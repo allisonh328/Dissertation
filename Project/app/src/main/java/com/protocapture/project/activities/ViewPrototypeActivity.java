@@ -1,7 +1,9 @@
 package com.protocapture.project.activities;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
@@ -31,6 +33,13 @@ public class ViewPrototypeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_prototype);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        // Get a support ActionBar corresponding to this toolbar
+        ActionBar ab = getSupportActionBar();
+
+        // Enable the Up button
+        ab.setDisplayHomeAsUpEnabled(true);
 
         // Set the Title of the screen to the Prototype name
         Intent intent = getIntent();
@@ -44,9 +53,8 @@ public class ViewPrototypeActivity extends AppCompatActivity {
                 mPrototype = prototype;
                 Log.d(TAG, "onChanged: prototypeID = " + Integer.toString(mPrototype.getPrototypeId()));
 
-                //getActionBar().setTitle(message);
-                getSupportActionBar().setTitle(mPrototype.getPrototypeName());
-                getSupportActionBar().show();
+                // Set the Title of the screen to the Prototype name
+                myToolbar.setTitle(mPrototype.getPrototypeName());
 
                 ComponentCollectionFragment fragment = new ComponentCollectionFragment();
                 Bundle args = new Bundle();

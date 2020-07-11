@@ -11,7 +11,7 @@ import java.util.List;
 @Dao
 public interface LinkDao {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     void insert(Link link);
 
     @Query("DELETE FROM link_table")

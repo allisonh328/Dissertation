@@ -27,9 +27,14 @@ import androidx.room.PrimaryKey;
                 @Index(value = {"joint_name"}, unique = true)})
 public class Joint {
 
+    public static final int FIXED = 0;
+    public static final int FREE = 1;
+    public static final int HORIZONTAL_CONSTRAINED = 3;
+    public static final int VERTICAL_CONSTRAINED = 4;
+
     @PrimaryKey(autoGenerate = true)
     @NonNull
-    @ColumnInfo(name = "joint_id")
+    @ColumnInfo(name="joint_id")
     private Integer jointId;
 
     @NonNull
@@ -37,6 +42,13 @@ public class Joint {
     private String jointName;
 
     @NonNull
+    @ColumnInfo(name="joint_x")
+    private Double xCoord;
+
+    @NonNull
+    @ColumnInfo(name="joint_y")
+    private Double yCoord;
+
     @ColumnInfo(name="link1_parent_id")
     private Integer link1ID;
 
@@ -47,8 +59,8 @@ public class Joint {
     @ColumnInfo(name="proto_parent_id")
     private Integer prototypeID;
 
-    @ColumnInfo(name="fixed")
-    private Boolean fixed = false;
+    @ColumnInfo(name="constraint")
+    private Integer constraint = FREE;
 
     public Joint() {}
 
@@ -58,17 +70,25 @@ public class Joint {
         this.jointName = jointName;
     }
 
+    public void setXCoord(@NonNull Double x) { xCoord = x; }
+
+    public void setYCoord(@NonNull Double y) { yCoord = y; }
+
     public void setLink1ID(@NonNull Integer parentID) { link1ID = parentID; }
 
     public void setLink2ID(Integer parentID) { link2ID = parentID; }
 
     public void setPrototypeID(Integer prototypeID) { this.prototypeID = prototypeID; }
 
-    public void setFixed(Boolean fixed) { this.fixed = fixed; }
+    public void setConstraint(Integer constraint) { this.constraint = constraint; }
 
     public Integer getJointId() { return jointId; }
 
     public String getJointName() { return jointName; }
+
+    public Double getXCoord() { return xCoord; }
+
+    public Double getYCoord() { return yCoord; }
 
     public Integer getLink1ID() { return link1ID; }
 
@@ -76,6 +96,6 @@ public class Joint {
 
     public Integer getPrototypeID() { return prototypeID; }
 
-    public Boolean isFixed() { return fixed; }
+    public Integer getConstraint() { return constraint; }
 }
 

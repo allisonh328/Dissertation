@@ -32,5 +32,7 @@ public class JointViewModel extends AndroidViewModel {
 
     public void insert(Joint joint) { mRepository.insert(joint); }
 
+    public void delete() { mRepository.deleteJoints(); }
+
     public void deleteJoint(Integer jointID) { mRepository.deleteJoint(jointID); }
 }

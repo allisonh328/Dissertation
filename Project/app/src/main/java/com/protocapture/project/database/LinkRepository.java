@@ -3,6 +3,7 @@ package com.protocapture.project.database;
 import android.app.Application;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import java.util.List;
 
@@ -48,5 +49,4 @@ public class LinkRepository {
             mLinkDao.deleteLink(linkID);
         });
     }
-
 }

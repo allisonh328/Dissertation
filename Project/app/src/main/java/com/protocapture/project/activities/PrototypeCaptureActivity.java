@@ -1,6 +1,7 @@
 package com.protocapture.project.activities;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -29,6 +30,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.protocapture.project.R;
+import com.protocapture.project.database.Joint;
+import com.protocapture.project.database.JointViewModel;
 import com.protocapture.project.database.Link;
 import com.protocapture.project.database.LinkViewModel;
 import com.protocapture.project.database.Prototype;
@@ -55,25 +58,27 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     public static final int LINK_EDITOR_REQUEST_CODE = 1;
     private static final String TAG = "ALLISON";
 
-    private boolean createLink = false;
+    private boolean createLinks = false;
+    private boolean addJoints = false;
     private boolean paused = false;
     private Mat mRgba;
     private PrototypeViewModel mPrototypeViewModel;
+    private LinkViewModel mLinkViewModel;
+    private JointViewModel mJointViewModel;
     private Prototype mPrototype;
     private ArrayList<org.opencv.core.Point> centers;
-    private ArrayList<org.opencv.core.Point> lines;
+    private ArrayList<Joint> lines;
     private Button createButton;
     private int height;
     private int width;
+    private static Integer fakeID = 1;
+    private List<Joint> joints;
 
     private CameraBridgeViewBase mOpenCvCameraView;
     private final int MY_PERMISSIONS_REQUEST_USE_CAMERA = 0x00AF;
 
-   /* private ArFragment arFragment;
-    private ViewRenderable helloRenderable;
-    private LayoutInflater mInflater;
-    private LinkViewModel mLinkViewModel;
-    private static Integer fakeID = 1;
+   /* private LayoutInflater mInflater;
+
     private View itemView;*/
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -105,6 +110,11 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
+        // Get a support ActionBar corresponding to this toolbar
+        ActionBar ab = getSupportActionBar();
+
+        // Enable the Up button
+        ab.setDisplayHomeAsUpEnabled(true);
         // Set the Title of the screen to the Prototype name
         Intent intent = getIntent();
         String prototypeName = intent.getStringExtra(AddPrototypeActivity.EXTRA_MESSAGE);
@@ -130,6 +140,8 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             mOpenCvCameraView.setCvCameraViewListener(this);
         }
 
+        mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
+        mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
         mPrototypeViewModel = new ViewModelProvider(this).get(PrototypeViewModel.class);
         mPrototypeViewModel.getPrototype(prototypeName).observe(this, new Observer<Prototype>() {
             @Override
@@ -174,31 +186,72 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_add) {
-            createLink = true;
+        if (id == R.id.action_add_joint) {
+            addJoints = true;
+            Toast.makeText(PrototypeCaptureActivity.this, "Select all joints, then click 'add'", Toast.LENGTH_LONG).show();
+            createButton.setVisibility(View.VISIBLE);
+            createButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    addJoints = false;
+                    setJoints();
+                    createButton.setVisibility(View.GONE);
+                }
+            });
+        } else if (id == R.id.action_add_link) {
+            createLinks = true;
             Toast.makeText(PrototypeCaptureActivity.this, "Select endpoints first, then any other joints on the link.\n" +
-                    "Click 'Create' to create link.", Toast.LENGTH_LONG).show();
+                    "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
             createButton.setVisibility(View.VISIBLE);
             createButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if(lines.size() < 2) {
                         Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
-                        createLink = false;
-                        return;
                     } else {
-                        Imgproc.line(mRgba, lines.get(0), lines.get(1), new Scalar(0, 0, 240), 5);
-                        createLink = false;
-                        lines.clear();
-                        createButton.setVisibility(View.GONE);
-                        return;
+                        addLink();
                     }
+                    createLinks = false;
+                    lines.clear();
+                    createButton.setVisibility(View.GONE);
                 }
             });
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setJoints() {
+        mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(this, new Observer<List<Joint>>() {
+            @Override
+            public void onChanged(@Nullable final List<Joint> jointsList) {
+                joints = jointsList;
+            }
+        });
+    }
+
+    private void addLink() {
+        Link link = new Link();
+        link.setParentID(mPrototype.getPrototypeId());
+        link.setLinkName("Link" + fakeID);
+        fakeID++;
+        link.setEndpoint1(lines.get(0).getJointId());
+        link.setEndpoint2(lines.get(1).getJointId());
+        Log.e(TAG, "TRYING TO INSERT LINK!");
+        mLinkViewModel.insert(link);
+        Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
+        Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
+        Imgproc.line(mRgba, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
+        for (Joint joint: lines) {
+            if(joint.getLink1ID() == null) {
+                joint.setLink1ID(link.getLinkId());
+            } else if (joint.getLink2ID() == null) {
+                joint.setLink2ID(link.getLinkId());
+            } else {
+                Toast.makeText(PrototypeCaptureActivity.this, "ERROR: Joints may not connect more than 2 links.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     @Override
@@ -251,6 +304,8 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        Toast.makeText(PrototypeCaptureActivity.this, "Tap screen to pause frame and capture prototype.\n" +
+                "Tap again to resume feed and select a new frame.", Toast.LENGTH_LONG).show();
         Log.i(TAG, "MainActivity.onCameraViewStarted: Camera starting.");
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         centers = new ArrayList<>();
@@ -276,31 +331,49 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             return true;
         }
 
-        if(!createLink) {
-            paused = !paused;
-            Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
-        } else {
+        float maxDistance = 100;
+        float xTouch = (event.getX() / width) * mRgba.cols();
+        float yTouch = (event.getY() / height) * mRgba.rows();
+        int index = -1;
+
+        if (addJoints) {
             if (centers.isEmpty()) {
                 Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
                 return true;
             }
 
-            float maxDistance = 100;
-
             for (org.opencv.core.Point center : centers) {
-                float xTouch = (event.getX() / width) * mRgba.cols();
-                float yTouch = (event.getY() / height) * mRgba.rows();
-                Log.i(TAG, "MainActivity.onTouch: Touch at (" + Float.toString(xTouch) + "," + Float.toString(yTouch) + ")");
+                Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
                 if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
+                    index = centers.indexOf(center);
+                    Log.i(TAG, "*********************");
+                    Log.i(TAG, "MainActivity.onTouch: Center at (" + center.x + "," + center.y + ")");
+                    Log.i(TAG, "*********************");
                     Imgproc.circle(mRgba, center, 8, new Scalar(240, 0, 0), -1);
-                    lines.add(center);
-                    Log.i(TAG, "*********************");
-                    Log.i(TAG, "MainActivity.onTouch: Center at (" + Double.toString(center.x) + "," + Double.toString(center.y) + ")");
-                    Log.i(TAG, "MainActivity.onTouch: I can go the distance");
-                    Log.i(TAG, "*********************");
+                    Joint joint = new Joint();
+                    String jointName = "Joint" + fakeID;
+                    fakeID++;
+                    joint.setJointName(jointName);
+                    joint.setPrototypeID(mPrototype.getPrototypeId());
+                    joint.setXCoord(center.x);
+                    joint.setYCoord(center.y);
+                    mJointViewModel.insert(joint);
                     return true;
                 }
             }
+            if (index != -1) {
+                centers.remove(index);
+            }
+        } else if(createLinks) {
+            for (Joint joint: joints) {
+                if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
+                    Imgproc.circle(mRgba, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
+                    lines.add(joint);
+                }
+            }
+        }  else {
+            paused = !paused;
+            Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
         }
 
         Log.i(TAG, "MainActivity.onTouch: I can go the distance");
@@ -337,7 +410,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     org.opencv.core.Point center = new Point();
                     Imgproc.minEnclosingCircle(c2f, center, radius);
                     centers.add(center);
-                    Log.i(TAG, "MainActivity.onCameraFrame: center at (" + Double.toString(center.x) + "," + Double.toString(center.y) + ")");
+                    Log.i(TAG, "MainActivity.onCameraFrame: center at (" + center.x + "," + center.y + ")");
                     Imgproc.circle(mRgba, center, (int) radius[0], new Scalar(0, 240, 0), 2);
                 }
             }
@@ -373,7 +446,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         TransformableNode hello = new TransformableNode(arFragment.getTransformationSystem());
         hello.getScaleController().setMaxScale(0.2f);
         hello.getScaleController().setMinScale(0.1f);
-        mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
+
         Link link = new Link();
         String linkName = "Link" + Integer.toString(fakeID);
         fakeID++;

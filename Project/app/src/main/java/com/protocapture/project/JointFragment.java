@@ -2,6 +2,7 @@ package com.protocapture.project;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +26,7 @@ import java.util.List;
 
 public class JointFragment extends Fragment implements JointListAdapter.OnJointListener {
     public static final int JOINT_EDITOR_REQUEST_CODE = 1;
+    public static final String TAG = "ALLISON";
 
     private JointViewModel mJointViewModel;
     private List<Joint> jointList;
@@ -47,13 +49,18 @@ public class JointFragment extends Fragment implements JointListAdapter.OnJointL
         final JointListAdapter adapter = new JointListAdapter(this.getContext(), this);
 
         mJointViewModel = new ViewModelProvider(this.getActivity()).get(JointViewModel.class);
-        mJointViewModel.setAllJoints(prototypeID);
+        //mJointViewModel.setAllJoints(prototypeID);
         mJointViewModel.getAllProtoJoints(prototypeID).observe(this.getViewLifecycleOwner(), new Observer<List<Joint>>() {
             @Override
             public void onChanged(@Nullable final List<Joint> joints) {
                 // Update the cached copy of the words in the adapter.
                 adapter.setJoints(joints);
                 jointList = joints;
+                if(joints.isEmpty()) {
+                    Log.d(TAG, "JointFragment.onChanged: Empty list :(");
+                } else {
+                    Log.d(TAG, "JointFragment.onChanged: joint_name = " + joints.get(0).getJointName());
+                }
                 recyclerView.setAdapter(adapter);
                 recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
             }

@@ -33,5 +33,7 @@ public class LinkViewModel extends AndroidViewModel {
 
     public void insert(Link link) { mRepository.insert(link); }
 
+    public void delete() { mRepository.deleteLinks(); }
+
     public void deleteLink(Integer linkID) { mRepository.deleteLink(linkID); }
 }

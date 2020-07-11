@@ -1,8 +1,10 @@
 package com.protocapture.project.database;
 
 import android.app.Application;
+import android.os.AsyncTask;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import java.util.List;
 
@@ -38,7 +40,8 @@ public class PrototypeRepository {
     void insert(Prototype prototype) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mPrototypeDao.insert(prototype);
-        }); }
+        });
+    }
 
     void delete() {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
