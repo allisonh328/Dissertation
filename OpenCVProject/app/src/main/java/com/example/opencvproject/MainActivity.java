@@ -1,17 +1,21 @@
 package com.example.opencvproject;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -31,6 +35,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
@@ -41,7 +46,11 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -63,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private CameraBridgeViewBase mOpenCvCameraView;
     private final int MY_PERMISSIONS_REQUEST_USE_CAMERA = 0x00AF;
+    private final int DRAWING_ACTIVITY_REQUEST_CODE = 1;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -236,8 +246,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
 
         if(!createLink) {
-            paused = !paused;
             Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
+            Bitmap bitmap = convertMatToBitMap(mRgba);
+            String filename = this.getExternalCacheDir() + "/bitmap.png";
+            File file = new File(filename);
+
+            try {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            } catch(IOException e) {
+                Log.e(TAG, "New File exception", e);
+            }
+
+            try (FileOutputStream out = new FileOutputStream(file)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                out.close();
+                bitmap.recycle();
+                Intent intent = new Intent(this, DrawingActivity.class);
+                intent.putExtra("BitmapImage", filename);
+                startActivityForResult(intent, DRAWING_ACTIVITY_REQUEST_CODE);
+            } catch (IOException e) {
+                Log.e(TAG, "ERROR:", e);
+            }
         } else {
             if (centers.isEmpty()) {
                 Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
@@ -314,5 +344,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return mRgba;
     }
 
+    // https://stackoverflow.com/questions/44579822/convert-opencv-mat-to-android-bitmap
+    private static Bitmap convertMatToBitMap(Mat input){
+        Bitmap bmp = null;
+        Mat rgb = new Mat();
+            Imgproc.cvtColor(input, rgb, Imgproc.COLOR_BGR2RGB);
+
+            try {
+            bmp = Bitmap.createBitmap(rgb.cols(), rgb.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(rgb, bmp);
+        }
+            catch (
+        CvException e){
+            Log.d("Exception",e.getMessage());
+        }
+            return bmp;
+    }
 }
 
