@@ -31,4 +31,7 @@ public interface PrototypeDao {
     @Transaction
     @Query("SELECT * FROM prototype_table WHERE prototype_id= :prototypeID")
     LiveData<PrototypeWithComponents> getPrototypeWithComponents (Integer prototypeID);
+
+    @Query("UPDATE prototype_table SET prototype_bitmap = :bitmap WHERE prototype_name = :prototypeName")
+    void setPrototypeBitmap(String bitmap, String prototypeName);
 }

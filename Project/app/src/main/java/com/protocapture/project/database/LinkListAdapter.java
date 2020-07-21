@@ -32,7 +32,7 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
     //https://www.youtube.com/watch?v=69C1ljfDvl0
     public interface OnLinkListener {
         void onLinkClick(int position);
-        void onDeleteClick(int position);
+        void onDeleteLink(int position);
     }
 
     private final LayoutInflater mInflater;
@@ -66,7 +66,7 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
             holder.deleteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    onLinkListener.onDeleteClick(position);
+                    onLinkListener.onDeleteLink(position);
                 }
             });
         } else {

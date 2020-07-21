@@ -12,17 +12,24 @@ import androidx.lifecycle.ViewModelProvider;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
 
 import com.protocapture.project.ComponentCollectionFragment;
 import com.protocapture.project.R;
+import com.protocapture.project.database.JointListAdapter;
+import com.protocapture.project.database.LinkListAdapter;
 import com.protocapture.project.database.Prototype;
 import com.protocapture.project.database.PrototypeViewModel;
 
 public class ViewPrototypeActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE = "com.example.project.activity.ViewPrototypeActivity.MESSAGE";
-    public static final int PROTOTYPE_CAPTURE_ACTIVITY_REQUEST_CODE = 1;
-    public static final String TAG = "ALLISONTAG";
+    public static final int SIMULATOR_ACTIVITY_REQUEST_CODE = 1;
+    public static final String TAG = "ALLISON";
 
     private PrototypeViewModel mPrototypeViewModel;
     private Prototype mPrototype;
@@ -68,4 +75,27 @@ public class ViewPrototypeActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.prototype_view_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_view_sim) {
+            Intent intent = new Intent(this, SimulatorActivity.class);
+            intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
+            startActivityForResult(intent, SIMULATOR_ACTIVITY_REQUEST_CODE);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
  }

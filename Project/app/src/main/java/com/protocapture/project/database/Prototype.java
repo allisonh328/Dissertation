@@ -20,13 +20,20 @@ public class Prototype {
     @ColumnInfo(name="prototype_name")
     private String prototypeName;
 
+    @ColumnInfo(name="prototype_bitmap")
+    private String prototypeBitmap;
+
     public Prototype() {}
 
     public void setPrototypeId(@NonNull Integer prototypeId) { this.prototypeId = prototypeId; }
 
     public void setPrototypeName(@NonNull String prototypeName) { this.prototypeName = prototypeName; }
 
+    public void setPrototypeBitmap(@NonNull String prototypeBitmap) { this.prototypeBitmap = prototypeBitmap; }
+
     public Integer getPrototypeId() { return this.prototypeId; }
 
     public String getPrototypeName() { return this.prototypeName; }
+
+    public String getPrototypeBitmap() { return this.prototypeBitmap; }
 }

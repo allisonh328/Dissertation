@@ -30,6 +30,14 @@ public class JointViewModel extends AndroidViewModel {
 
     public LiveData<Joint> getJoint(String jointName) { return mRepository.getJoint(jointName); }
 
+    public LiveData<Joint> getJointById(int jointID) { return mRepository.getJointById(jointID); }
+
+    public LiveData<Prototype> getParentPrototype(int jointID) {return mRepository.getParentPrototype(jointID); }
+
+    public LiveData<Link> getParentLink1(int jointID) {return mRepository.getParentLink1(jointID); }
+
+    public LiveData<Link> getParentLink2(int jointID) {return mRepository.getParentLink2(jointID); }
+
     public void insert(Joint joint) { mRepository.insert(joint); }
 
     public void delete() { mRepository.deleteJoints(); }

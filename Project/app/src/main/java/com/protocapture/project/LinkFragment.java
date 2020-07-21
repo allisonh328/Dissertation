@@ -79,7 +79,7 @@ public class LinkFragment extends Fragment implements LinkListAdapter.OnLinkList
     }
 
     @Override
-    public void onDeleteClick(int position) {
+    public void onDeleteLink(int position) {
         Integer linkID = linkList.get(position).getLinkId();
         String linkName = linkList.get(position).getLinkName();
         mLinkViewModel.deleteLink(linkID);

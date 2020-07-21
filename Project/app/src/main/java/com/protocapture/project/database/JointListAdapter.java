@@ -29,7 +29,7 @@ public class JointListAdapter extends RecyclerView.Adapter<JointListAdapter.Join
     //https://www.youtube.com/watch?v=69C1ljfDvl0
     public interface OnJointListener {
         void onJointClick(int position);
-        void onDeleteClick(int position);
+        void onDeleteJoint(int position);
     }
 
     private final LayoutInflater mInflater;
@@ -62,7 +62,7 @@ public class JointListAdapter extends RecyclerView.Adapter<JointListAdapter.Join
             holder.deleteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    onJointListener.onDeleteClick(position);
+                    onJointListener.onDeleteJoint(position);
                 }
             });
         } else {

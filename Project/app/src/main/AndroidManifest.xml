@@ -5,10 +5,18 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera.ar" />
-    <uses-feature android:name="android.hardware.camera" android:required="false"/>
-    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
-    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
-    <uses-feature android:name="android.hardware.camera.front.autofocus" android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.front"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.front.autofocus"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -17,23 +25,28 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name="com.protocapture.project.activities.JointEditorActivity"></activity>
+
         <activity
-            android:name="com.protocapture.project.activities.ViewPrototypeActivity"
-            android:parentActivityName="com.protocapture.project.activities.MainActivity" />
+            android:name=".activities.SimulatorActivity"
+            android:parentActivityName=".activities.ViewPrototypeActivity"/>
         <activity
-            android:name="com.protocapture.project.activities.AddPrototypeActivity"
-            android:parentActivityName="com.protocapture.project.activities.MainActivity" />
+            android:name=".activities.JointEditorActivity"
+            android:parentActivityName=".activities.ViewPrototypeActivity" />
         <activity
-            android:name="com.protocapture.project.activities.PrototypeCaptureActivity"
-            android:parentActivityName="com.protocapture.project.activities.MainActivity" />
+            android:name=".activities.ViewPrototypeActivity"
+            android:parentActivityName=".activities.MainActivity" />
         <activity
-            android:name="com.protocapture.project.activities.LinkEditorActivity"
-            android:parentActivityName="com.protocapture.project.activities.PrototypeCaptureActivity" />
-        <activity android:name="com.protocapture.project.activities.MainActivity">
+            android:name=".activities.AddPrototypeActivity"
+            android:parentActivityName=".activities.MainActivity" />
+        <activity
+            android:name=".activities.PrototypeCaptureActivity"
+            android:parentActivityName=".activities.MainActivity" />
+        <activity
+            android:name=".activities.LinkEditorActivity"
+            android:parentActivityName=".activities.PrototypeCaptureActivity" />
+        <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -41,6 +54,7 @@
         <meta-data
             android:name="com.google.ar.core"
             android:value="required" />
+
     </application>
 
 </manifest>

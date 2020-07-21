@@ -23,6 +23,10 @@ public class PrototypeViewModel extends AndroidViewModel {
 
     public LiveData<Prototype> getPrototype(String prototypeName) { return mRepository.getPrototype(prototypeName); }
 
+    public void setPrototypeBitmap(String bitmap, String prototypeName) {
+        mRepository.setPrototypeBitmap(bitmap, prototypeName);
+    }
+
     public void insert(Prototype prototype) { mRepository.insert(prototype); }
 
     public void delete() { mRepository.delete(); }

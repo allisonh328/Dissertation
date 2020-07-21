@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -41,6 +42,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -51,11 +53,15 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PrototypeCaptureActivity extends AppCompatActivity implements View.OnTouchListener, CameraBridgeViewBase.CvCameraViewListener2{
-    public static final int LINK_EDITOR_REQUEST_CODE = 1;
+    public static final int VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE = 1;
+    public static final String EXTRA_MESSAGE = "com.example.project.activity.MainActivity.MESSAGE";
     private static final String TAG = "ALLISON";
 
     private boolean createLinks = false;
@@ -206,14 +212,41 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             createButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(createButton.getText().equals("Done")) {
+                        Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
+                        Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.RGB_565);
+                        Utils.matToBitmap(mRgba, bitmap);
+                        String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";
+                        File file = new File(filename);
+
+                        try {
+                            file.getParentFile().mkdirs();
+                            file.createNewFile();
+                        } catch(Exception e) {
+                            Log.e(TAG, "New File exception", e);
+                        }
+
+                        try (FileOutputStream out = new FileOutputStream(file)) {
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                            out.close();
+                            bitmap.recycle();
+                            mPrototypeViewModel.setPrototypeBitmap(filename, mPrototype.getPrototypeName());
+                            Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
+                            intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
+                            startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
+                        } catch (IOException e) {
+                            Log.e(TAG, "ERROR:", e);
+                        }
+                        return;
+                    }
+
                     if(lines.size() < 2) {
                         Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
                     } else {
                         addLink();
                     }
-                    createLinks = false;
                     lines.clear();
-                    createButton.setVisibility(View.GONE);
+                    createButton.setText("Done");
                 }
             });
             return true;
@@ -238,7 +271,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         fakeID++;
         link.setEndpoint1(lines.get(0).getJointId());
         link.setEndpoint2(lines.get(1).getJointId());
-        Log.e(TAG, "TRYING TO INSERT LINK!");
         mLinkViewModel.insert(link);
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
         Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
@@ -365,6 +397,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 centers.remove(index);
             }
         } else if(createLinks) {
+            createButton.setText("Add");
             for (Joint joint: joints) {
                 if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
                     Imgproc.circle(mRgba, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
@@ -420,7 +453,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
             try {
-                Thread.sleep(500);
+                Thread.sleep(300);
             } catch (InterruptedException ie) {
                 Log.e(TAG, ie.getMessage());
             }

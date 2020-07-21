@@ -76,7 +76,7 @@ public class JointFragment extends Fragment implements JointListAdapter.OnJointL
     }
 
     @Override
-    public void onDeleteClick(int position) {
+    public void onDeleteJoint(int position) {
         Integer jointID = jointList.get(position).getJointId();
         String jointName = jointList.get(position).getJointName();
         mJointViewModel.deleteJoint(jointID);

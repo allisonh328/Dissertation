@@ -25,6 +25,14 @@ public class JointRepository {
 
     LiveData<Joint> getJoint(String jointName) { return mJointDao.getJoint(jointName); }
 
+    LiveData<Joint> getJointById(int jointID) { return mJointDao.getJointById(jointID); }
+
+    LiveData<Prototype> getParentPrototype(int jointID) { return mJointDao.getParentPrototype(jointID); }
+
+    LiveData<Link> getParentLink1(int jointID) { return mJointDao.getParentLink1(jointID); }
+
+    LiveData<Link> getParentLink2(int jointID) { return mJointDao.getParentLink2(jointID); }
+
     void insert(Joint joint) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mJointDao.insert(joint);
