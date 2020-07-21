@@ -22,6 +22,9 @@ import android.widget.Toast;
 import com.protocapture.project.ComponentCollectionFragment;
 import com.protocapture.project.R;
 import com.protocapture.project.SimulatorView;
+import com.protocapture.project.database.Joint;
+import com.protocapture.project.database.JointViewModel;
+import com.protocapture.project.database.LinkViewModel;
 import com.protocapture.project.database.Prototype;
 import com.protocapture.project.database.PrototypeViewModel;
 
@@ -29,6 +32,10 @@ import org.opencv.core.Point;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SimulatorActivity extends AppCompatActivity {
 
@@ -36,6 +43,9 @@ public class SimulatorActivity extends AppCompatActivity {
     private final static String TAG = "ALLISON";
     private SimulatorView mSimulatorView;
     private PrototypeViewModel mPrototypeViewModel;
+    private LinkViewModel mLinkViewModel;
+    private JointViewModel mJointViewModel;
+    private Prototype mPrototype;
 
     Bitmap backgroundBitmap;
     Canvas background;
@@ -43,12 +53,7 @@ public class SimulatorActivity extends AppCompatActivity {
     Paint pathPaint;
     Paint jointsPaint;
 
-
-
-    private final Point[] points = {new Point(553, 354),
-            new Point(553, 228),
-            new Point(960, 128),
-            new Point(960, 354)};
+    private final ArrayList<Point> points = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,38 +66,41 @@ public class SimulatorActivity extends AppCompatActivity {
         // Get a support ActionBar corresponding to this toolbar
         ActionBar ab = getSupportActionBar();
 
-        Toast.makeText(this, "Welcome to the drawing activity!", Toast.LENGTH_LONG).show();
-
-        Bitmap bitmap = null;
-        String prototypeName = getIntent().getStringExtra(EXTRA_MESSAGE);
         // Enable the Up button
         ab.setDisplayHomeAsUpEnabled(true);
         // Set the Title of the screen to the Prototype name
+        String prototypeName = getIntent().getStringExtra(EXTRA_MESSAGE);
         myToolbar.setTitle(prototypeName);
 
+        // Set up Paint to draw the motion profile
         pathPaint = new Paint();
         pathPaint.setAntiAlias(true);
         pathPaint.setColor(Color.GREEN);
         pathPaint.setStrokeWidth(4);
 
+        // Set up Paint to draw the joints (connecting points)
         jointsPaint = new Paint();
         jointsPaint.setAntiAlias(true);
         jointsPaint.setColor(Color.RED);
         jointsPaint.setStyle(Paint.Style.FILL);
 
+        // Set up Paint to draw the links (lines)
         linksPaint = new Paint();
         linksPaint.setAntiAlias(true);
         linksPaint.setColor(Color.BLACK);
         linksPaint.setStrokeWidth(4);
 
+        mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
+        mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
         mPrototypeViewModel = new ViewModelProvider(this).get(PrototypeViewModel.class);
         mPrototypeViewModel.getPrototype(prototypeName).observe(this, new Observer<Prototype>() {
             @Override
             public void onChanged(@Nullable final Prototype prototype) {
 
+                mPrototype = prototype;
                 Bitmap bitmap = null;
                 try {
-                    String filename = prototype.getPrototypeBitmap();
+                    String filename = mPrototype.getPrototypeBitmap();
                     Log.i(TAG, filename);
 
                     FileInputStream input = new FileInputStream(new File(filename));
@@ -108,14 +116,26 @@ public class SimulatorActivity extends AppCompatActivity {
                 bitmap.recycle();
                 background = new Canvas(backgroundBitmap);
 
+                fillPoints();
+            }
+        });
+    }
+
+    private void fillPoints() {
+        mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(this, new Observer<List<Joint>>() {
+            @Override
+            public void onChanged(@Nullable final List<Joint> joints) {
+                for(Joint joint: joints) {
+                    points.add(new Point(joint.getXCoord(), joint.getYCoord()));
+                }
                 drawFrame(points);
             }
         });
     }
 
-    private void drawFrame(Point[] drawingPoints) {
+    private void drawFrame(ArrayList<Point> drawingPoints) {
 
-        background.drawCircle((float) drawingPoints[2].x, (float) drawingPoints[2].y, 2, pathPaint);
+        background.drawCircle((float) drawingPoints.get(2).x, (float) drawingPoints.get(2).y, 2, pathPaint);
 
         Log.i(TAG, "drawing new frame");
 
@@ -127,10 +147,10 @@ public class SimulatorActivity extends AppCompatActivity {
             drawable.drawCircle((float) point.x, (float) point.y, 8, jointsPaint);
         }
 
-        drawable.drawLine((float) drawingPoints[0].x, (float) drawingPoints[0].y, (float) drawingPoints[1].x, (float) drawingPoints[1].y, linksPaint);
-        drawable.drawLine((float) drawingPoints[1].x, (float) drawingPoints[1].y, (float) drawingPoints[2].x, (float) drawingPoints[2].y, linksPaint);
-        drawable.drawLine((float) drawingPoints[2].x, (float) drawingPoints[2].y, (float) drawingPoints[3].x, (float) drawingPoints[3].y, linksPaint);
-        drawable.drawLine((float) drawingPoints[3].x, (float) drawingPoints[3].y, (float) drawingPoints[0].x, (float) drawingPoints[0].y, linksPaint);
+        drawable.drawLine((float) drawingPoints.get(0).x, (float) drawingPoints.get(0).y, (float) drawingPoints.get(1).x, (float) drawingPoints.get(1).y, linksPaint);
+        drawable.drawLine((float) drawingPoints.get(1).x, (float) drawingPoints.get(1).y, (float) drawingPoints.get(2).x, (float) drawingPoints.get(2).y, linksPaint);
+        drawable.drawLine((float) drawingPoints.get(2).x, (float) drawingPoints.get(2).y, (float) drawingPoints.get(3).x, (float) drawingPoints.get(3).y, linksPaint);
+        drawable.drawLine((float) drawingPoints.get(3).x, (float) drawingPoints.get(3).y, (float) drawingPoints.get(0).x, (float) drawingPoints.get(0).y, linksPaint);
 
         mSimulatorView.drawBitmap(drawableBitmap);
     }
@@ -141,18 +161,18 @@ public class SimulatorActivity extends AppCompatActivity {
         double gamma;
         double thetaStart;
 
-        Point[] workingPoints = convertCoordinates(points[0]);
+        ArrayList<Point> workingPoints = convertCoordinates(points.get(0));
 
         assert getMagnitude(new Point(0,0), new Point(0, 4)) == 4;
         assert getMagnitude(new Point(0, 0), new Point(4, 0)) == 4;
         assert getMagnitude(new Point(0, 0), new Point(3, 4)) == 5;
-        double a = getMagnitude(workingPoints[0], workingPoints[1]);
-        double b = getMagnitude(workingPoints[1], workingPoints[2]);
-        double c = getMagnitude(workingPoints[2], workingPoints[3]);
-        double d = getMagnitude(workingPoints[3], workingPoints[0]);
+        double a = getMagnitude(workingPoints.get(0), workingPoints.get(1));
+        double b = getMagnitude(workingPoints.get(1), workingPoints.get(2));
+        double c = getMagnitude(workingPoints.get(2), workingPoints.get(3));
+        double d = getMagnitude(workingPoints.get(3), workingPoints.get(0));
 
-        gamma = getAngle(workingPoints[0], workingPoints[3]);
-        thetaStart = getAngle(workingPoints[0], workingPoints[1]) - gamma;
+        gamma = getAngle(workingPoints.get(0), workingPoints.get(3));
+        thetaStart = getAngle(workingPoints.get(0), workingPoints.get(1)) - gamma;
 
         for(double theta = thetaStart; theta < thetaStart + 2 * Math.PI; theta = theta + 0.05) {
             double e = Math.sqrt(a * a + d * d - 2 * a * d * Math.cos(theta));
@@ -160,8 +180,8 @@ public class SimulatorActivity extends AppCompatActivity {
             double beta = Math.acos((e * e + c * c - b * b) / (2 * e * c));
             double phi = alpha + beta;
 
-            Point A = workingPoints[0];
-            Point D = workingPoints[3];
+            Point A = workingPoints.get(0);
+            Point D = workingPoints.get(0);
             Point B = new Point(a * Math.cos(theta + gamma), a * Math.sin(theta + gamma));
             Point C;
 
@@ -175,8 +195,8 @@ public class SimulatorActivity extends AppCompatActivity {
             double y2 = (-1 * bQuad - Math.sqrt(bQuad * bQuad - 4 * aQuad * cQuad)) / (2 * aQuad);
             double x1 = u * y1 + v;
             double x2 = u * y2 + v;
-            double mag1 = getMagnitude(new Point(x1, y1), workingPoints[2]);
-            double mag2 = getMagnitude(new Point(x2, y2), workingPoints[2]);
+            double mag1 = getMagnitude(new Point(x1, y1), workingPoints.get(2));
+            double mag2 = getMagnitude(new Point(x2, y2), workingPoints.get(2));
 
             if(mag1 < mag2) {
                 C = new Point(x1, y1);
@@ -185,12 +205,13 @@ public class SimulatorActivity extends AppCompatActivity {
             }
 
             try {
-                Thread.sleep(100);
+                Thread.sleep(40);
             } catch (InterruptedException ie) {
-                Log.e(TAG, ie.getMessage());
+                return;
             }
 
-            Point[] drawingPoints = reconvertCoordinates(new Point[] {A, B, C, D}, points[0]);
+            ArrayList<Point> newPoints = new ArrayList<>(Arrays.asList(A, B, C, D));
+            ArrayList<Point> drawingPoints = reconvertCoordinates(newPoints, points.get(0));
             drawFrame(drawingPoints);
         }
     }
@@ -216,22 +237,22 @@ public class SimulatorActivity extends AppCompatActivity {
         return Math.acos(dotProduct / magnitude);
     }
 
-    private Point[] convertCoordinates (Point origin) {
+    private ArrayList<Point> convertCoordinates (Point origin) {
         int yMax = background.getHeight();
-        Point[] workingPoints = new Point[points.length];
+        ArrayList<Point> workingPoints = new ArrayList<>();
 
-        for(int i = 0; i < points.length; i++) {
-            workingPoints[i] = new Point(points[i].x - origin.x, yMax - points[i].y - (yMax - origin.y));
+        for(Point point: points) {
+            workingPoints.add(new Point(point.x - origin.x, yMax - point.y - (yMax - origin.y)));
         }
         return workingPoints;
     }
 
-    private Point[] reconvertCoordinates (Point[] pointList, Point origin) {
+    private ArrayList<Point> reconvertCoordinates (ArrayList<Point> pointList, Point origin) {
         int yMax = background.getHeight();
-        Point[] drawingPoints = new Point[points.length];
+        ArrayList<Point> drawingPoints = new ArrayList<>();
 
-        for(int i = 0; i < pointList.length; i++) {
-            drawingPoints[i] = new Point(pointList[i].x + origin.x, yMax - (pointList[i].y + (yMax - origin.y)));
+        for(Point point: pointList) {
+            drawingPoints.add(new Point(point.x + origin.x, yMax - (point.y + (yMax - origin.y))));
         }
         return drawingPoints;
     }

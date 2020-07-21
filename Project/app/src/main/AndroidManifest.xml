@@ -34,7 +34,8 @@
             android:parentActivityName=".activities.ViewPrototypeActivity" />
         <activity
             android:name=".activities.ViewPrototypeActivity"
-            android:parentActivityName=".activities.MainActivity" />
+            android:parentActivityName=".activities.MainActivity"
+            android:launchMode="singleTop"/>
         <activity
             android:name=".activities.AddPrototypeActivity"
             android:parentActivityName=".activities.MainActivity" />

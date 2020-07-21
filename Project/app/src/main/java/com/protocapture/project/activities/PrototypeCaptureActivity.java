@@ -194,6 +194,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_add_joint) {
             addJoints = true;
+            createLinks = false;
             Toast.makeText(PrototypeCaptureActivity.this, "Select all joints, then click 'add'", Toast.LENGTH_LONG).show();
             createButton.setVisibility(View.VISIBLE);
             createButton.setOnClickListener(new View.OnClickListener() {
@@ -206,6 +207,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             });
         } else if (id == R.id.action_add_link) {
             createLinks = true;
+            addJoints = false;
             Toast.makeText(PrototypeCaptureActivity.this, "Select endpoints first, then any other joints on the link.\n" +
                     "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
             createButton.setVisibility(View.VISIBLE);
@@ -397,11 +399,12 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 centers.remove(index);
             }
         } else if(createLinks) {
-            createButton.setText("Add");
+
             for (Joint joint: joints) {
                 if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
                     Imgproc.circle(mRgba, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
                     lines.add(joint);
+                    createButton.setText("Add");
                 }
             }
         }  else {
