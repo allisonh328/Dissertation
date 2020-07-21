@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
             try {
-                Thread.sleep(500);
+                Thread.sleep(300);
             } catch (InterruptedException ie) {
                 Log.e(TAG, ie.getMessage());
             }

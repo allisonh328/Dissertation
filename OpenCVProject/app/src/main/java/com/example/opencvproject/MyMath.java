@@ -183,4 +183,6 @@ public class MyMath {
             return (n - 1) + getSize(n - 1);
         }
     }
+
+
 }
