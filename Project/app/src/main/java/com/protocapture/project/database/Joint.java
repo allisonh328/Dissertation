@@ -60,7 +60,7 @@ public class Joint {
     private Integer prototypeID;
 
     @ColumnInfo(name="constraint")
-    private Integer constraint = FREE;
+    private Integer constraint = FIXED;
 
     public Joint() {}
 

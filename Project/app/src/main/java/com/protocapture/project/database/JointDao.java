@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -13,6 +14,9 @@ public interface JointDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(Joint joint);
+
+    @Update
+    void updateJoints(List<Joint> joints);
 
     @Query("DELETE FROM joint_table")
     void deleteAll();
@@ -46,4 +50,13 @@ public interface JointDao {
             " JOIN joint_table ON link_id = link2_parent_id " +
             " WHERE joint_id = :jointID")
     LiveData<Link> getParentLink2(int jointID);
+
+    @Query("UPDATE joint_table SET link1_parent_id = :linkID WHERE joint_id = :jointID")
+    void setLink1Id(int linkID, int jointID);
+
+    @Query("UPDATE joint_table SET link2_parent_id = :linkID WHERE joint_id = :jointID")
+    void setLink2Id(int linkID, int jointID);
+
+   // @Query("SELECT joint_x, joint_y FROM joint_table WHERE joint_id = :jointID")
+   // LiveData<PointTuple> getCoordinates(int jointID);
 }

@@ -50,9 +50,6 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
         // Get a support ActionBar corresponding to this toolbar
         ActionBar ab = getSupportActionBar();
 
-        // Enable the Up button
-        ab.setDisplayHomeAsUpEnabled(true);
-
         RecyclerView recyclerView = findViewById(R.id.recyclerview);
         final PrototypeListAdapter adapter = new PrototypeListAdapter(this, this);
         recyclerView.setAdapter(adapter);

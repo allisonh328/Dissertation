@@ -28,4 +28,14 @@ public interface LinkDao {
 
     @Query("SELECT * FROM link_table WHERE link_name = :linkName")
     LiveData<Link> getLink(String linkName);
+
+    @Query("SELECT * FROM joint_table " +
+            " JOIN link_table ON joint_id = joint1_id " +
+            " WHERE link_id = :linkID")
+    LiveData<Joint> getEndpoint1(int linkID);
+
+    @Query("SELECT * FROM joint_table " +
+            " JOIN link_table ON joint_id = joint2_id " +
+            " WHERE link_id = :linkID")
+    LiveData<Joint> getEndpoint2(int linkID);
 }

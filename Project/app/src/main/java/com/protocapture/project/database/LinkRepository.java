@@ -1,6 +1,7 @@
 package com.protocapture.project.database;
 
 import android.app.Application;
+import android.graphics.Point;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -29,6 +30,10 @@ public class LinkRepository {
     }
 
     LiveData<Link> getLink(String linkName) { return mLinkDao.getLink(linkName); }
+
+    LiveData<Joint> getEndpoint1(int linkID) { return mLinkDao.getEndpoint1(linkID); }
+
+    LiveData<Joint> getEndpoint2(int linkID) { return mLinkDao.getEndpoint2(linkID); }
 
     // You must call this on a non-UI thread or your app will throw an exception. Room ensures
     // that you're not doing any long running operations on the main thread, blocking the UI.

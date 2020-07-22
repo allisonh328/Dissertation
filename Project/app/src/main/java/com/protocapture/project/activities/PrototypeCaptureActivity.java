@@ -215,30 +215,24 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 @Override
                 public void onClick(View v) {
                     if(createButton.getText().equals("Done")) {
-                        Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
-                        Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.RGB_565);
-                        Utils.matToBitmap(mRgba, bitmap);
-                        String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";
-                        File file = new File(filename);
 
-                        try {
-                            file.getParentFile().mkdirs();
-                            file.createNewFile();
-                        } catch(Exception e) {
-                            Log.e(TAG, "New File exception", e);
-                        }
+                        mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(PrototypeCaptureActivity.this, new Observer<List<Link>>() {
+                            @Override
+                            public void onChanged(List<Link> links) {
+                                for(Link link: links) {
+                                    Joint joint1 = getJointbyId(link.getEndpoint1());
+                                    addLinkId(joint1, link.getLinkId());
+                                    Joint joint2 = getJointbyId(link.getEndpoint2());
+                                    addLinkId(joint2, link.getLinkId());
+                                }
+                                mJointViewModel.updateJoints(joints);
 
-                        try (FileOutputStream out = new FileOutputStream(file)) {
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                            out.close();
-                            bitmap.recycle();
-                            mPrototypeViewModel.setPrototypeBitmap(filename, mPrototype.getPrototypeName());
-                            Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
-                            intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
-                            startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
-                        } catch (IOException e) {
-                            Log.e(TAG, "ERROR:", e);
-                        }
+                                saveBitmap();
+                                Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
+                                intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
+                                startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
+                            }
+                        });
                         return;
                     }
 
@@ -277,14 +271,49 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
         Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
         Imgproc.line(mRgba, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
-        for (Joint joint: lines) {
-            if(joint.getLink1ID() == null) {
-                joint.setLink1ID(link.getLinkId());
-            } else if (joint.getLink2ID() == null) {
-                joint.setLink2ID(link.getLinkId());
-            } else {
-                Toast.makeText(PrototypeCaptureActivity.this, "ERROR: Joints may not connect more than 2 links.", Toast.LENGTH_LONG).show();
+    }
+
+    private void saveBitmap() {
+        Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
+        Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.RGB_565);
+        Utils.matToBitmap(mRgba, bitmap);
+        String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";
+        File file = new File(filename);
+
+        try {
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+        } catch(Exception e) {
+            Log.e(TAG, "New File exception", e);
+        }
+
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            out.close();
+            bitmap.recycle();
+            mPrototypeViewModel.setPrototypeBitmap(filename, mPrototype.getPrototypeName());
+        } catch (IOException e) {
+            Log.e(TAG, "ERROR:", e);
+        }
+    }
+
+    private Joint getJointbyId(int id) {
+        for(Joint joint: joints) {
+            if(joint.getJointId() == id) {
+                return joint;
             }
+        }
+        return null;
+    }
+
+    private void addLinkId(Joint joint, int linkID) {
+        Log.i(TAG, "Link id = " + linkID + ", joint id = " + joint.getJointId());
+        if(joint.getLink1ID() == null) {
+            Log.i(TAG, "Adding to link1");
+            joint.setLink1ID(linkID);
+        } else if (joint.getLink2ID() == null) {
+            Log.i(TAG, "Adding to link2");
+            joint.setLink2ID(linkID);
         }
     }
 

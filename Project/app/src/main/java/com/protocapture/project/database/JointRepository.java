@@ -33,9 +33,17 @@ public class JointRepository {
 
     LiveData<Link> getParentLink2(int jointID) { return mJointDao.getParentLink2(jointID); }
 
+    //LiveData<PointTuple> getCoordinates(int jointID) { return mJointDao.getCoordinates(jointID); }
+
     void insert(Joint joint) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mJointDao.insert(joint);
+        });
+    }
+
+    void updateJoints(List<Joint> joints) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mJointDao.updateJoints(joints);
         });
     }
 
@@ -48,6 +56,18 @@ public class JointRepository {
     void deleteJoint(Integer jointID) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mJointDao.deleteJoint(jointID);
+        });
+    }
+
+    void setLink1Id(int linkID, int jointID) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mJointDao.setLink1Id(linkID, jointID);
+        });
+    }
+
+    void setLink2Id(int linkID, int jointID) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mJointDao.setLink2Id(linkID, jointID);
         });
     }
 }
