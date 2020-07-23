@@ -31,11 +31,17 @@ public class LinkViewModel extends AndroidViewModel {
 
     public LiveData<Link> getLink(String linkName) { return mRepository.getLink(linkName); }
 
+    public LiveData<Link> getLinkById(int linkID) { return mRepository.getLinkById(linkID); }
+
+    public LiveData<Prototype> getParentPrototype(int linkID) {return mRepository.getParentPrototype(linkID); }
+
     public LiveData<Joint> getEndpoint1(int linkID) { return mRepository.getEndpoint1(linkID); }
 
     public LiveData<Joint> getEndpoint2(int linkID) { return mRepository.getEndpoint2(linkID); }
 
     public void insert(Link link) { mRepository.insert(link); }
+
+    public void updateLink(Link link) { mRepository.updateLink(link); }
 
     public void delete() { mRepository.deleteLinks(); }
 

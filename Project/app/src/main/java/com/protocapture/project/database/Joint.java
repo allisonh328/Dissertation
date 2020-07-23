@@ -27,10 +27,10 @@ import androidx.room.PrimaryKey;
                 @Index(value = {"joint_name"}, unique = true)})
 public class Joint {
 
-    public static final int FIXED = 0;
-    public static final int FREE = 1;
-    public static final int HORIZONTAL_CONSTRAINED = 3;
-    public static final int VERTICAL_CONSTRAINED = 4;
+    public static final int FREE = 0;
+    public static final int FIXED = 1;
+    public static final int HORIZONTAL_CONSTRAINED = 2;
+    public static final int VERTICAL_CONSTRAINED = 3;
 
     @PrimaryKey(autoGenerate = true)
     @NonNull
@@ -60,7 +60,7 @@ public class Joint {
     private Integer prototypeID;
 
     @ColumnInfo(name="constraint")
-    private Integer constraint = FIXED;
+    private Integer constraint = FREE;
 
     public Joint() {}
 

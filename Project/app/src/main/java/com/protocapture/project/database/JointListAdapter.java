@@ -51,7 +51,7 @@ public class JointListAdapter extends RecyclerView.Adapter<JointListAdapter.Join
     public void onBindViewHolder(JointListAdapter.JointViewHolder holder, int position) {
         if (mJoints != null) {
             Joint current = mJoints.get(position);
-            String displayText = current.getJointName() + Integer.toString(current.getJointId());
+            String displayText = current.getJointName();
             holder.jointItemView.setText(displayText);
             holder.jointItemView.setOnClickListener(new View.OnClickListener() {
                 @Override

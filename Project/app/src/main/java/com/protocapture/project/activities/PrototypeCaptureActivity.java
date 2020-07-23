@@ -274,7 +274,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     }
 
     private void saveBitmap() {
-        Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
+        //Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
         Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.RGB_565);
         Utils.matToBitmap(mRgba, bitmap);
         String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";

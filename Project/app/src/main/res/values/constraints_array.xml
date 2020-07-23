@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="constraints_array">
+        <item>FREE</item>
+        <item>FIXED</item>
+        <item>HORIZONTAL CONSTRAINED</item>
+        <item>VERTICAL CONSTRAINED</item>
+    </string-array>
+</resources>

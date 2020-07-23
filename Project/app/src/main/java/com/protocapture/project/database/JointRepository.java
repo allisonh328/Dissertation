@@ -47,6 +47,12 @@ public class JointRepository {
         });
     }
 
+    void updateJoint(Joint joint) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mJointDao.updateJoint(joint);
+        });
+    }
+
     void deleteJoints() {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mJointDao.deleteAll();

@@ -18,6 +18,9 @@ public interface JointDao {
     @Update
     void updateJoints(List<Joint> joints);
 
+    @Update
+    void updateJoint(Joint joint);
+
     @Query("DELETE FROM joint_table")
     void deleteAll();
 

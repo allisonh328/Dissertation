@@ -31,6 +31,10 @@ public class LinkRepository {
 
     LiveData<Link> getLink(String linkName) { return mLinkDao.getLink(linkName); }
 
+    LiveData<Link> getLinkById(int linkID) { return mLinkDao.getLinkById(linkID); }
+
+    LiveData<Prototype> getParentPrototype(int linkID) { return mLinkDao.getParentPrototype(linkID); }
+
     LiveData<Joint> getEndpoint1(int linkID) { return mLinkDao.getEndpoint1(linkID); }
 
     LiveData<Joint> getEndpoint2(int linkID) { return mLinkDao.getEndpoint2(linkID); }
@@ -40,6 +44,12 @@ public class LinkRepository {
     void insert(Link link) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mLinkDao.insert(link);
+        });
+    }
+
+    void updateLink(Link link) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mLinkDao.updateLink(link);
         });
     }
 

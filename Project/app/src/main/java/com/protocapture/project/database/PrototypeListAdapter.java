@@ -53,7 +53,7 @@ public class PrototypeListAdapter extends RecyclerView.Adapter<PrototypeListAdap
     public void onBindViewHolder(PrototypeListAdapter.PrototypeViewHolder holder, int position) {
         if (mPrototypes != null) {
             Prototype current = mPrototypes.get(position);
-            String displayText = current.getPrototypeName() + Integer.toString(current.getPrototypeId());
+            String displayText = current.getPrototypeName();
             holder.prototypeItemView.setText(displayText);
             Log.d(TAG, "PrototypeListAdapter.onBindViewHolder: " + displayText);
             holder.prototypeItemView.setOnClickListener(new View.OnClickListener() {

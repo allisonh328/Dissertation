@@ -54,7 +54,7 @@ public class LinkListAdapter extends RecyclerView.Adapter<LinkListAdapter.LinkVi
     public void onBindViewHolder(LinkViewHolder holder, int position) {
         if (mLinks != null) {
             Link current = mLinks.get(position);
-            String displayText = current.getLinkName() + Integer.toString(current.getLinkId());
+            String displayText = current.getLinkName();
             holder.linkItemView.setText(displayText);
             Log.d(TAG, "LinkListAdapter.onBindViewHolder: " + displayText);
             holder.linkItemView.setOnClickListener(new View.OnClickListener() {
