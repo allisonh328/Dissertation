@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".activities.SimulatorActivity">
+
+    <item
+        android:id="@+id/action_edit_joint"
+        android:title="@string/action_edit_joint"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_view_sim"
+        android:title="@string/action_run_sim"
+        app:showAsAction="never" />
+
+    <!-- Settings, should always be in the overflow -->
+    <item android:id="@+id/action_help"
+        android:title="@string/action_help"
+        app:showAsAction="never"/>
+</menu>

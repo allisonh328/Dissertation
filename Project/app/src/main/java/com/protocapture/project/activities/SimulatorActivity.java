@@ -17,8 +17,11 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.protocapture.project.ComponentCollectionFragment;
@@ -46,6 +49,8 @@ public class SimulatorActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE = "com.example.project.activity.ViewPrototypeActivity.MESSAGE";
     private final static String TAG = "ALLISON";
+    private final static int JOINT_EDITOR_REQUEST_CODE = 1;
+
     private SimulatorView mSimulatorView;
     private PrototypeViewModel mPrototypeViewModel;
     private LinkViewModel mLinkViewModel;
@@ -53,15 +58,18 @@ public class SimulatorActivity extends AppCompatActivity {
     private Prototype mPrototype;
     private List<Link> mLinks;
     private List<Joint> mJoints;
+    private Button okButton;
+    private Joint editJoint = null;
 
-    Bitmap backgroundBitmap;
-    Canvas background;
-    Paint linksPaint;
-    Paint pathPaint;
-    Paint jointsPaint;
+    private Bitmap backgroundBitmap;
+    private Canvas background;
+    private Paint linksPaint;
+    private Paint pathPaint;
+    private Paint jointsPaint;
 
     private boolean selectDriver = false;
     private boolean selectDrawer = false;
+    private boolean selectEditJoint = false;
     private int focusIndex = -1;
 
     private final ArrayList<Point> points = new ArrayList<>();
@@ -82,6 +90,9 @@ public class SimulatorActivity extends AppCompatActivity {
         // Set the Title of the screen to the Prototype name
         String prototypeName = getIntent().getStringExtra(EXTRA_MESSAGE);
         myToolbar.setTitle(prototypeName);
+
+        okButton = (Button) findViewById(R.id.button_ok);
+        okButton.bringToFront();
 
         // Set up Paint to draw the motion profile
         pathPaint = new Paint();
@@ -143,12 +154,64 @@ public class SimulatorActivity extends AppCompatActivity {
                             initPoints.add(new Point(joint.getXCoord(), joint.getYCoord()));
                         }
                         drawFrame(initPoints);
-                        selectDriver = true;
-                        Toast.makeText(SimulatorActivity.this, "Select driving link.", Toast.LENGTH_LONG).show();
                     }
                 });
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.simulator_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_edit_joint) {
+            selectDrawer = false;
+            selectDriver = false;
+            selectEditJoint = true;
+            Toast.makeText(SimulatorActivity.this, "Select joint to edit.", Toast.LENGTH_LONG).show();
+            okButton.setText("Edit");
+            okButton.setVisibility(View.VISIBLE);
+            okButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(editJoint == null) {
+                        Toast.makeText(SimulatorActivity.this, "Please select a joint to edit.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    Intent intent = new Intent(SimulatorActivity.this, JointEditorActivity.class);
+                    intent.putExtra("joint_id", editJoint.getJointId());
+                    startActivityForResult(intent, JOINT_EDITOR_REQUEST_CODE);
+                }
+            });
+
+        } else if (id == R.id.action_view_sim) {
+            selectDrawer = false;
+            selectEditJoint = false;
+            selectDriver = true;
+            Toast.makeText(SimulatorActivity.this, "Select driving link.", Toast.LENGTH_LONG).show();
+            okButton.setText("Animate");
+            okButton.setVisibility(View.VISIBLE);
+            okButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(focusIndex == -1 || points.isEmpty()) {
+                        Toast.makeText(SimulatorActivity.this, "Please select driving link and focus point.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    animateMechanism(mSimulatorView);
+                }
+            });
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void drawFrame(ArrayList<Point> drawingPoints) {
@@ -178,9 +241,6 @@ public class SimulatorActivity extends AppCompatActivity {
 
     public void animateMechanism(View view) {
 
-        if(focusIndex == -1 || points.isEmpty()) {
-            Toast.makeText(this, "Please select driving link and focus point.", Toast.LENGTH_LONG).show();
-        }
         ArrayList<Point> workingPoints = convertCoordinates(points.get(0));
 
         assert getMagnitude(new Point(0,0), new Point(0, 4)) == 4;
@@ -238,7 +298,7 @@ public class SimulatorActivity extends AppCompatActivity {
                 ArrayList<Point> drawingPoints = reconvertCoordinates(newPoints, points.get(0));
                 drawFrame(drawingPoints);
             } else {
-                Toast.makeText(this, "Simulation Failed.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
                 return;
             }
         }
@@ -295,6 +355,7 @@ public class SimulatorActivity extends AppCompatActivity {
         float xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
         float yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
 
+        int maxDistance = 50;
         if(selectDriver) {
             Log.i(TAG, "Waiting for link selection...");
             Log.i(TAG, "x = " + xTouch + ", y = " + yTouch);
@@ -304,16 +365,26 @@ public class SimulatorActivity extends AppCompatActivity {
             } else {
                 fillPoints(driver);
                 selectDriver = false;
+                selectEditJoint = false;
                 selectDrawer = true;
                 Toast.makeText(this, "Select the focus point.", Toast.LENGTH_LONG).show();
             }
         } else if(selectDrawer) {
-            int maxDistance = 50;
             for (int i = 0; i < points.size(); i++) {
-                Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
+                Log.i(TAG, "SelectDrawer: Touch at (" + xTouch + "," + yTouch + ")");
                 if (Math.abs(points.get(i).x - xTouch) < maxDistance && Math.abs(points.get(i).y - yTouch) < maxDistance) {
                     focusIndex = i;
                     Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
+                    selectDrawer = false;
+                    return true;
+                }
+            }
+        } else if(selectEditJoint) {
+            for(Joint joint: mJoints) {
+                Log.i(TAG, "SelectEditJoint: Touch at (" + xTouch + "," + yTouch + ")");
+                if (Math.abs(joint.getXCoord()- xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
+                    editJoint = joint;
+                    Toast.makeText(this, "Edit " + joint.getJointName() + "?", Toast.LENGTH_LONG).show();
                     selectDrawer = false;
                     return true;
                 }

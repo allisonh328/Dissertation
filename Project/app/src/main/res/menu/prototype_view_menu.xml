@@ -5,8 +5,8 @@
         tools:context=".MainActivity">
 
         <item
-            android:id="@+id/action_view_sim"
-            android:title="@string/action_view_sim"
+            android:id="@+id/action_view_prototype"
+            android:title="@string/action_view_prototype"
             app:showAsAction="never"/>
 
         <!-- Settings, should always be in the overflow -->

@@ -24,7 +24,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:text="@string/create_link"
+        android:text="@string/add_button"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/button_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:text="@string/cancel_button"
         android:visibility="gone"/>
 
 </FrameLayout>

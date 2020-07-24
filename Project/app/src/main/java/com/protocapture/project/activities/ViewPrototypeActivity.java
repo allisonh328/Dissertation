@@ -90,7 +90,11 @@ public class ViewPrototypeActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_view_sim) {
+        if (id == R.id.action_view_prototype) {
+            if(mPrototype.getPrototypeBitmap() == null) {
+                Toast.makeText(this, "No image has been saved for this prototype.", Toast.LENGTH_LONG).show();
+                return true;
+            }
             Intent intent = new Intent(this, SimulatorActivity.class);
             intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
             startActivityForResult(intent, SIMULATOR_ACTIVITY_REQUEST_CODE);

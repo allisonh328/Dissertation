@@ -1,5 +1,6 @@
 package com.protocapture.project.activities;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,7 +13,10 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,10 +35,15 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
 
-public class JointEditorActivity extends AppCompatActivity {
+public class JointEditorActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
-    JointViewModel mJointViewModel;
-    Joint mJoint;
+    private JointViewModel mJointViewModel;
+    private Joint mJoint;
+
+    private EditText jointName;
+    private EditText jointX;
+    private EditText jointY;
+    private Spinner constraint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,25 +72,34 @@ public class JointEditorActivity extends AppCompatActivity {
                 mJoint = joint;
                 myToolbar.setTitle(joint.getJointName());
 
-                EditText jointName = findViewById(R.id.editJointName);
+                jointName = findViewById(R.id.editJointName);
                 jointName.setText(mJoint.getJointName());
 
-                EditText jointX = findViewById(R.id.editJointX);
+                jointX = findViewById(R.id.editJointX);
                 jointX.setText(Double.toString(mJoint.getXCoord()));
 
-                EditText jointY = findViewById(R.id.editJointY);
+                jointY = findViewById(R.id.editJointY);
                 jointY.setText(Double.toString(mJoint.getYCoord()));
 
-                EditText constraint = findViewById(R.id.editJointConstraint);
-                constraint.setText(Double.toString(mJoint.getConstraint()));
+                constraint = (Spinner) findViewById(R.id.editJointConstraint);
+                ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(JointEditorActivity.this,
+                        R.array.constraints_array, android.R.layout.simple_spinner_item);
+                // Specify the layout to use when the list of choices appears
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                // Apply the adapter to the spinner
+                constraint.setAdapter(adapter);
+                constraint.setOnItemSelectedListener(JointEditorActivity.this);
+                int spinnerPosition = mJoint.getConstraint();
+                constraint.setSelection(spinnerPosition);
             }
         });
 
         mJointViewModel.getParentPrototype(jointID).observe(this, new Observer<Prototype>() {
             @Override
-            public void onChanged(@Nullable final Prototype prototype) {
+            public void onChanged(@NonNull final Prototype prototype) {
                 TextView prototypeView = findViewById(R.id.textViewPrototype);
-                prototypeView.setText(prototype.getPrototypeName());
+                String displayPrototype = "Parent Prototype: " + prototype.getPrototypeName();
+                prototypeView.setText(displayPrototype);
             }
         });
 
@@ -89,7 +107,13 @@ public class JointEditorActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable final Link link1) {
                 TextView link1View = findViewById(R.id.textViewLink1);
-                link1View.setText(link1.getLinkName());
+                String displayLink1;
+                if(link1 == null) {
+                    displayLink1 = "Parent Link 1: EMPTY";
+                } else {
+                    displayLink1 = "Parent Link 1: " + link1.getLinkName();
+                }
+                link1View.setText(displayLink1);
             }
         });
 
@@ -97,14 +121,34 @@ public class JointEditorActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable final Link link2) {
                 TextView link2View = findViewById(R.id.textViewLink2);
-                link2View.setText(link2.getLinkName());
+                String displayLink2;
+                if(link2 == null) {
+                    displayLink2 = "Parent Link 2: EMPTY";
+                } else {
+                    displayLink2 = "Parent Link 2: " + link2.getLinkName();
+                }
+                link2View.setText(displayLink2);
             }
         });
-
     }
 
     public void saveJoint(View view) {
-        return;
+
+        mJoint.setJointName(jointName.getText().toString());
+        mJoint.setXCoord(Double.parseDouble(jointX.getText().toString()));
+        mJoint.setYCoord(Double.parseDouble(jointY.getText().toString()));
+        mJointViewModel.updateJoint(mJoint);
+
+        Toast.makeText(this, "Joint saved!", Toast.LENGTH_LONG).show();
     }
 
+    @Override
+    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+        mJoint.setConstraint(i);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+        return;
+    }
 }

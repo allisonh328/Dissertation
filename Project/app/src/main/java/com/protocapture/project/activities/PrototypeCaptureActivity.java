@@ -68,6 +68,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private boolean addJoints = false;
     private boolean paused = false;
     private Mat mRgba;
+    private Mat drawable;
     private PrototypeViewModel mPrototypeViewModel;
     private LinkViewModel mLinkViewModel;
     private JointViewModel mJointViewModel;
@@ -75,17 +76,15 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private ArrayList<org.opencv.core.Point> centers;
     private ArrayList<Joint> lines;
     private Button createButton;
+    private Button cancelButton;
     private int height;
     private int width;
-    private static Integer fakeID = 1;
-    private List<Joint> joints;
+    private Integer fakeID = 1;
+    private List<Joint> mJoints;
+    private List<Link> mLinks;
 
     private CameraBridgeViewBase mOpenCvCameraView;
     private final int MY_PERMISSIONS_REQUEST_USE_CAMERA = 0x00AF;
-
-   /* private LayoutInflater mInflater;
-
-    private View itemView;*/
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -105,14 +104,14 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         }
     };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_prototype_capture);
-        /*arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
-        mInflater = LayoutInflater.from(this);*/
+        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -126,25 +125,27 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         String prototypeName = intent.getStringExtra(AddPrototypeActivity.EXTRA_MESSAGE);
         myToolbar.setTitle(prototypeName);
 
-        createButton = (Button) findViewById(R.id.button_create);
-        createButton.bringToFront();
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        height = displayMetrics.heightPixels;
-        width = displayMetrics.widthPixels;
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA ) != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG,"Permission not available requesting permission");
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_USE_CAMERA);
         } else {
-            Log.d(TAG,"Permission has already granted");
-            mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
+            Log.d(TAG,"Permission has already been granted");
             mOpenCvCameraView.setCameraPermissionGranted();
             mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
             mOpenCvCameraView.setCvCameraViewListener(this);
         }
+
+        createButton = (Button) findViewById(R.id.button_create);
+        createButton.bringToFront();
+
+        cancelButton = findViewById(R.id.button_cancel);
+        cancelButton.bringToFront();
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        height = displayMetrics.heightPixels;
+        width = displayMetrics.widthPixels;
 
         mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
         mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
@@ -155,25 +156,43 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 // Update the cached copy of the words in the adapter.
                 mPrototype = prototype;
 
-                //getActionBar().setTitle(message);
+                mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(PrototypeCaptureActivity.this, new Observer<List<Joint>>() {
+                    @Override
+                    public void onChanged(@Nullable final List<Joint> joints) {
+                        // Update the cached copy of the words in the adapter.
+                        Log.i(TAG, "updating joints");
+                        mJoints = joints;
+                    }
+                });
 
+                mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(PrototypeCaptureActivity.this, new Observer<List<Link>>() {
+                    @Override
+                    public void onChanged(@Nullable final List<Link> links) {
+                        // Update the cached copy of the words in the adapter.
+                        Log.i(TAG, "updating links");
+                        mLinks = links;
+                    }
+                });
             }
         });
+    }
 
-        /*ViewGroup viewGroup = findViewById(R.id.renderable);
-        itemView = mInflater.inflate(R.layout.hello_view, viewGroup, false);
-        //TextView view = itemView.findViewById(R.id.textView2);
 
-        ViewRenderable.builder()
-                .setView(this, itemView)
-                .build()
-                .thenAccept(renderable -> helloRenderable = renderable);
-
-        //https://www.freecodecamp.org/news/how-to-build-an-augmented-reality-android-app-with-arcore-and-android-studio-43e4676cb36f/
-        arFragment.setOnTapArPlaneListener(
-                (HitResult hitresult, Plane plane, MotionEvent motionevent) -> {
-                    onHit(hitresult, plane, motionevent);
-                });*/
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_USE_CAMERA) {
+            // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG,"permission was granted! Do your stuff");
+                mOpenCvCameraView.setCameraPermissionGranted();
+                mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+                mOpenCvCameraView.setCvCameraViewListener(this);
+            } else {
+                Log.d(TAG,"permission denied! Disable the function related with permission.");
+                Toast.makeText(this, "Camera permission required.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
 
@@ -184,6 +203,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         return true;
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -193,90 +213,162 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_add_joint) {
+            if(!paused) {
+                Toast.makeText(this, "Pause feed before adding joints", Toast.LENGTH_LONG).show();
+                return true;
+            }
+
             addJoints = true;
             createLinks = false;
             Toast.makeText(PrototypeCaptureActivity.this, "Select all joints, then click 'add'", Toast.LENGTH_LONG).show();
+
             createButton.setVisibility(View.VISIBLE);
             createButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     addJoints = false;
-                    setJoints();
+                    //setJoints();
+                    mRgba = drawable.clone();
+                    createButton.setVisibility(View.GONE);
+                    cancelButton.setVisibility(View.GONE);
+                }
+            });
+
+            cancelButton.setVisibility(View.VISIBLE);
+            cancelButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    addJoints = false;
+                    drawable = mRgba.clone();
+                    deleteJoints();
+                    cancelButton.setVisibility(View.GONE);
                     createButton.setVisibility(View.GONE);
                 }
             });
+
         } else if (id == R.id.action_add_link) {
+            if(!paused) {
+                Toast.makeText(this, "Pause feed before adding joints", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            if(mJoints == null) {
+                Toast.makeText(this, "Please select joints first", Toast.LENGTH_LONG).show();
+                return true;
+            }
+
             createLinks = true;
             addJoints = false;
-            Toast.makeText(PrototypeCaptureActivity.this, "Select endpoints first, then any other joints on the link.\n" +
+            Toast.makeText(this, "Select endpoints first, then any other joints on the link.\n" +
                     "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
+            drawable = mRgba.clone();
+
             createButton.setVisibility(View.VISIBLE);
             createButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if(createButton.getText().equals("Done")) {
-
-                        mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(PrototypeCaptureActivity.this, new Observer<List<Link>>() {
-                            @Override
-                            public void onChanged(List<Link> links) {
-                                for(Link link: links) {
-                                    Joint joint1 = getJointbyId(link.getEndpoint1());
-                                    addLinkId(joint1, link.getLinkId());
-                                    Joint joint2 = getJointbyId(link.getEndpoint2());
-                                    addLinkId(joint2, link.getLinkId());
-                                }
-                                mJointViewModel.updateJoints(joints);
-
-                                saveBitmap();
-                                Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
-                                intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
-                                startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
-                            }
-                        });
-                        return;
-                    }
-
-                    if(lines.size() < 2) {
-                        Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
+                        clickDone();
                     } else {
-                        addLink();
+                        clickAdd();
+                        lines.clear();
+                        createButton.setText(R.string.done_button);
                     }
-                    lines.clear();
-                    createButton.setText("Done");
                 }
             });
-            return true;
+
+            cancelButton.setVisibility(View.VISIBLE);
+            cancelButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    createLinks = false;
+                    lines.clear();
+                    drawable = mRgba.clone();
+                    deleteLinks();
+                    cancelButton.setVisibility(View.GONE);
+                    createButton.setVisibility(View.GONE);
+                }
+            });
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    private void setJoints() {
+
+    private void deleteJoints() {
+        if(mJoints != null) {
+            for (Joint joint: mJoints) {
+                mJointViewModel.deleteJoint(joint.getJointId());
+            }
+        }
+    }
+
+
+    private void deleteLinks() {
+        if(mLinks != null) {
+            for (Link link : mLinks) {
+                mLinkViewModel.deleteLink(link.getLinkId());
+            }
+        }
+    }
+
+
+    private void clickDone() {
+        mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(PrototypeCaptureActivity.this, new Observer<List<Link>>() {
+            @Override
+            public void onChanged(List<Link> links) {
+                for(Link link: links) {
+                    Joint joint1 = getJointbyId(link.getEndpoint1());
+                    addLinkId(joint1, link.getLinkId());
+                    Joint joint2 = getJointbyId(link.getEndpoint2());
+                    addLinkId(joint2, link.getLinkId());
+                }
+                mJointViewModel.updateJoints(mJoints);
+
+                saveBitmap();
+                Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
+                intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
+                startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
+            }
+        });
+    }
+
+    private void clickAdd() {
+        if(lines.size() < 2) {
+            Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
+        } else {
+            addLink();
+        }
+    }
+
+   /* private void setJoints() {
         mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(this, new Observer<List<Joint>>() {
             @Override
             public void onChanged(@Nullable final List<Joint> jointsList) {
                 joints = jointsList;
             }
         });
-    }
+    }*/
+
 
     private void addLink() {
         Link link = new Link();
         link.setParentID(mPrototype.getPrototypeId());
-        link.setLinkName("Link" + fakeID);
+        String linkName = mPrototype.getPrototypeName() + "Link" + fakeID;
+        link.setLinkName(linkName);
         fakeID++;
         link.setEndpoint1(lines.get(0).getJointId());
         link.setEndpoint2(lines.get(1).getJointId());
         mLinkViewModel.insert(link);
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
         Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
-        Imgproc.line(mRgba, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
+        Imgproc.line(drawable, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
     }
+
 
     private void saveBitmap() {
         //Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
-        Bitmap bitmap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.RGB_565);
-        Utils.matToBitmap(mRgba, bitmap);
+        Bitmap bitmap = Bitmap.createBitmap(drawable.cols(), drawable.rows(), Bitmap.Config.RGB_565);
+        Utils.matToBitmap(drawable, bitmap);
         String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";
         File file = new File(filename);
 
@@ -297,14 +389,16 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         }
     }
 
+
     private Joint getJointbyId(int id) {
-        for(Joint joint: joints) {
+        for(Joint joint: mJoints) {
             if(joint.getJointId() == id) {
                 return joint;
             }
         }
         return null;
     }
+
 
     private void addLinkId(Joint joint, int linkID) {
         Log.i(TAG, "Link id = " + linkID + ", joint id = " + joint.getJointId());
@@ -317,25 +411,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_USE_CAMERA: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG,"permission was granted! Do your stuff");
-                    mOpenCvCameraView.setCameraPermissionGranted();
-                } else {
-                    Log.d(TAG,"permission denied! Disable the function related with permission.");
-                    Toast toast =
-                            Toast.makeText(this, "Camera permission required.", Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.CENTER, 0, 0);
-                    toast.show();
-                }
-            }
-        }
-    }
 
     @Override
     public void onPause()
@@ -344,6 +419,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
+
 
     @Override
     public void onResume()
@@ -358,12 +434,14 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         }
     }
 
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
+
 
     @Override
     public void onCameraViewStarted(int width, int height) {
@@ -378,10 +456,12 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         }
     }
 
+
     @Override
     public void onCameraViewStopped() {
         mRgba.release();
     }
+
 
     // https://stackoverflow.com/questions/22863842/how-to-make-circle-clickable
     @Override
@@ -394,10 +474,9 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             return true;
         }
 
-        float maxDistance = 100;
+        float maxDistance = 50;
         float xTouch = (event.getX() / width) * mRgba.cols();
         float yTouch = (event.getY() / height) * mRgba.rows();
-        int index = -1;
 
         if (addJoints) {
             if (centers.isEmpty()) {
@@ -408,13 +487,12 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             for (org.opencv.core.Point center : centers) {
                 Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
                 if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
-                    index = centers.indexOf(center);
                     Log.i(TAG, "*********************");
                     Log.i(TAG, "MainActivity.onTouch: Center at (" + center.x + "," + center.y + ")");
                     Log.i(TAG, "*********************");
-                    Imgproc.circle(mRgba, center, 8, new Scalar(240, 0, 0), -1);
+                    Imgproc.circle(drawable, center, 8, new Scalar(240, 0, 0), -1);
                     Joint joint = new Joint();
-                    String jointName = "Joint" + fakeID;
+                    String jointName = mPrototype.getPrototypeName() + "Joint" + fakeID;
                     fakeID++;
                     joint.setJointName(jointName);
                     joint.setPrototypeID(mPrototype.getPrototypeId());
@@ -424,19 +502,20 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     return true;
                 }
             }
-            if (index != -1) {
-                centers.remove(index);
-            }
-        } else if(createLinks) {
 
-            for (Joint joint: joints) {
+        } else if(createLinks) {
+            for (Joint joint: mJoints) {
                 if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
-                    Imgproc.circle(mRgba, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
+                    Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
                     lines.add(joint);
-                    createButton.setText("Add");
+                    createButton.setText(R.string.add_button);
                 }
             }
+
         }  else {
+            drawable = mRgba.clone();
+            deleteJoints();
+            deleteLinks();
             paused = !paused;
             Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
         }
@@ -444,6 +523,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         Log.i(TAG, "MainActivity.onTouch: I can go the distance");
         return true;
     }
+
 
     // https://stackoverflow.com/questions/31504366/opencv-for-java-houghcircles-finding-all-the-wrong-circles
     @Override
@@ -487,42 +567,12 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             try {
                 Thread.sleep(300);
             } catch (InterruptedException ie) {
-                Log.e(TAG, ie.getMessage());
+                return mRgba;
             }
+            return mRgba;
+        } else {
+            return drawable;
         }
-        return mRgba;
     }
 
-    //https://developer.android.com/training/basics/firstapp/starting-activity
-    /*public void editLink(View view) {
-        Intent intent = new Intent(this, LinkEditorActivity.class);
-        TextView textView = itemView.findViewById(R.id.textView2);
-        String name = textView.getText().toString();
-        intent.putExtra("link_name", name);
-        startActivityForResult(intent, LINK_EDITOR_REQUEST_CODE);
-    }
-
-    private void onHit(HitResult hitResult, Plane plane, MotionEvent motionEvent) {
-        if (helloRenderable == null){ return; }
-        ViewRenderable linkRenderable = helloRenderable.makeCopy();
-        Anchor anchor = hitResult.createAnchor();
-        AnchorNode anchorNode = new AnchorNode(anchor);
-        anchorNode.setParent(arFragment.getArSceneView().getScene());
-        TransformableNode hello = new TransformableNode(arFragment.getTransformationSystem());
-        hello.getScaleController().setMaxScale(0.2f);
-        hello.getScaleController().setMinScale(0.1f);
-
-        Link link = new Link();
-        String linkName = "Link" + Integer.toString(fakeID);
-        fakeID++;
-        link.setLinkName(linkName);
-        link.setParentID(mPrototype.getPrototypeId());
-        Log.d(TAG, "onChanged: prototypeID = " + Integer.toString(mPrototype.getPrototypeId()));
-        mLinkViewModel.insert(link);
-        TextView view = itemView.findViewById(R.id.textView2);
-        view.setText(link.getLinkName());
-        hello.setParent(anchorNode);
-        hello.setRenderable(linkRenderable);
-        hello.select();
-    }*/
 }

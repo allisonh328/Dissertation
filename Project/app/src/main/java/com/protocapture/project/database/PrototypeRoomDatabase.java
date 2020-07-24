@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 //https://codelabs.developers.google.com/codelabs/android-room-with-a-view/index.html
-@Database(entities = {Prototype.class, Link.class, Joint.class}, version = 12, exportSchema = false)
+@Database(entities = {Prototype.class, Link.class, Joint.class}, version = 13, exportSchema = false)
 public abstract class PrototypeRoomDatabase extends RoomDatabase {
 
     public abstract PrototypeDao prototypeDao();
@@ -41,12 +41,12 @@ public abstract class PrototypeRoomDatabase extends RoomDatabase {
 
     private static RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
         @Override
-        public void onOpen(@NonNull SupportSQLiteDatabase db) {
-            super.onOpen(db);
+        public void onCreate(@NonNull SupportSQLiteDatabase db) {
+            super.onCreate(db);
 
             // If you want to keep data through app restarts,
             // comment out the following block
-           /* databaseWriteExecutor.execute(() -> {
+            databaseWriteExecutor.execute(() -> {
                 // Populate the database in the background.
                 // If you want to start with more words, just add them.
                 PrototypeDao pdao = INSTANCE.prototypeDao();
@@ -55,7 +55,7 @@ public abstract class PrototypeRoomDatabase extends RoomDatabase {
                 ldao.deleteAll();
                 JointDao jdao = INSTANCE.jointDao();
                 jdao.deleteAll();
-            });*/
+            });
         }
     };
 
