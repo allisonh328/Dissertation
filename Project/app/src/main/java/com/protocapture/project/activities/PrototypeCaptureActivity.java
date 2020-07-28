@@ -10,8 +10,10 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -21,9 +23,11 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -84,6 +88,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private List<Link> mLinks;
 
     private CameraBridgeViewBase mOpenCvCameraView;
+    private WindowManager windowManager;
     private final int MY_PERMISSIONS_REQUEST_USE_CAMERA = 0x00AF;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -112,6 +117,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_prototype_capture);
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
+        windowManager = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -142,10 +148,19 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         cancelButton = findViewById(R.id.button_cancel);
         cancelButton.bringToFront();
 
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        height = displayMetrics.heightPixels;
-        width = displayMetrics.widthPixels;
+        height = Resources.getSystem().getDisplayMetrics().heightPixels;
+        width = Resources.getSystem().getDisplayMetrics().widthPixels;
+
+        mOpenCvCameraView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            public void onGlobalLayout() {
+                mOpenCvCameraView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                int top = mOpenCvCameraView.getTop();
+                int bottom = mOpenCvCameraView.getBottom();
+                int right = mOpenCvCameraView.getRight();
+                int left = mOpenCvCameraView.getLeft();
+                Log.i(TAG, "Top = " + top + ", bottom = " + bottom + ", left = " + left + ", right = " + right);
+            }
+        });
 
         mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
         mLinkViewModel = new ViewModelProvider(this).get(LinkViewModel.class);
@@ -332,6 +347,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         });
     }
 
+
     private void clickAdd() {
         if(lines.size() < 2) {
             Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
@@ -339,6 +355,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             addLink();
         }
     }
+
 
    /* private void setJoints() {
         mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(this, new Observer<List<Joint>>() {
@@ -474,9 +491,33 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             return true;
         }
 
-        float maxDistance = 50;
-        float xTouch = (event.getX() / width) * mRgba.cols();
-        float yTouch = (event.getY() / height) * mRgba.rows();
+        float maxDistance = width/30;
+        float xTouch = 0;
+        float yTouch = 0;
+        int rotation = windowManager.getDefaultDisplay().getRotation();
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                yTouch = ((width - event.getX()) / width) * mRgba.rows();
+                xTouch = (event.getY() / height) * mRgba.cols();
+                //xTouch = (event.getX() / width) * mRgba.cols();
+                //yTouch = (event.getY() / height) * mRgba.rows();
+                break;
+            case Surface.ROTATION_90:
+                xTouch = (event.getX() / width) * mRgba.cols();
+                yTouch = (event.getY() / height) * mRgba.rows();
+                break;
+            case Surface.ROTATION_180:
+                yTouch = ((width - event.getX()) / width) * mRgba.rows();
+                xTouch = ((height - event.getY()) / height) * mRgba.cols();
+                break;
+            case Surface.ROTATION_270:
+                xTouch = ((width - event.getX()) / width) * mRgba.cols();
+                yTouch = ((height - event.getY()) / height) * mRgba.rows();
+                break;
+        }
+
+        Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
+        int index = -1;
 
         if (addJoints) {
             if (centers.isEmpty()) {
@@ -485,11 +526,12 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             }
 
             for (org.opencv.core.Point center : centers) {
-                Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
+
                 if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
                     Log.i(TAG, "*********************");
                     Log.i(TAG, "MainActivity.onTouch: Center at (" + center.x + "," + center.y + ")");
                     Log.i(TAG, "*********************");
+                    index = centers.indexOf(center);
                     Imgproc.circle(drawable, center, 8, new Scalar(240, 0, 0), -1);
                     Joint joint = new Joint();
                     String jointName = mPrototype.getPrototypeName() + "Joint" + fakeID;
@@ -499,8 +541,11 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     joint.setXCoord(center.x);
                     joint.setYCoord(center.y);
                     mJointViewModel.insert(joint);
-                    return true;
+                    break;
                 }
+            }
+            if(index != -1) {
+                centers.remove(index);
             }
 
         } else if(createLinks) {
@@ -520,7 +565,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
         }
 
-        Log.i(TAG, "MainActivity.onTouch: I can go the distance");
+        //Log.i(TAG, "MainActivity.onTouch: I can go the distance");
         return true;
     }
 
@@ -555,7 +600,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     org.opencv.core.Point center = new Point();
                     Imgproc.minEnclosingCircle(c2f, center, radius);
                     centers.add(center);
-                    Log.i(TAG, "MainActivity.onCameraFrame: center at (" + center.x + "," + center.y + ")");
+                    //Log.i(TAG, "MainActivity.onCameraFrame: center at (" + center.x + "," + center.y + ")");
                     Imgproc.circle(mRgba, center, (int) radius[0], new Scalar(0, 240, 0), 2);
                 }
             }
