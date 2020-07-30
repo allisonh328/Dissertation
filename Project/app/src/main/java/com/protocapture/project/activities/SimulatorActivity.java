@@ -43,6 +43,7 @@ import java.io.FileInputStream;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class SimulatorActivity extends AppCompatActivity {
@@ -51,6 +52,7 @@ public class SimulatorActivity extends AppCompatActivity {
     private final static String TAG = "ALLISON";
     private final static int JOINT_EDITOR_REQUEST_CODE = 1;
 
+    private DisplayMetrics displayMetrics = new DisplayMetrics();
     private SimulatorView mSimulatorView;
     private PrototypeViewModel mPrototypeViewModel;
     private LinkViewModel mLinkViewModel;
@@ -60,6 +62,13 @@ public class SimulatorActivity extends AppCompatActivity {
     private List<Joint> mJoints;
     private Button okButton;
     private Joint editJoint = null;
+    private Point origin;
+    private ArrayList<Joint> complete = new ArrayList<>();
+    private HashMap<String, Double> radii = new HashMap<>();
+    private Joint motor;
+    private Point motorPoint;
+    private double theta1;
+    private double theta2;
 
     private Bitmap backgroundBitmap;
     private Canvas background;
@@ -68,11 +77,13 @@ public class SimulatorActivity extends AppCompatActivity {
     private Paint jointsPaint;
 
     private boolean selectDriver = false;
-    private boolean selectDrawer = false;
+    //private boolean selectDrawer = false;
     private boolean selectEditJoint = false;
-    private int focusIndex = -1;
+    private Integer motorIndex = -1;
+    private boolean kill = false;
 
     private final ArrayList<Point> points = new ArrayList<>();
+    private ArrayList<Pair<Point, Point>> drawLines = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,20 +153,20 @@ public class SimulatorActivity extends AppCompatActivity {
                     @Override
                     public void onChanged(@Nullable final List<Link> links) {
                         mLinks = links;
+
+                        mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(SimulatorActivity.this, new Observer<List<Joint>>() {
+                            @Override
+                            public void onChanged(@Nullable final List<Joint> joints) {
+                                mJoints = joints;
+                                for (Joint joint : mJoints) {
+                                    points.add(new Point(joint.getXCoord(), joint.getYCoord()));
+                                }
+                                drawFrame(mJoints);
+                            }
+                        });
                     }
                 });
 
-                mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(SimulatorActivity.this, new Observer<List<Joint>>() {
-                    @Override
-                    public void onChanged(@Nullable final List<Joint> joints) {
-                        mJoints = joints;
-                        ArrayList<Point> initPoints = new ArrayList<>();
-                        for(Joint joint: mJoints) {
-                            initPoints.add(new Point(joint.getXCoord(), joint.getYCoord()));
-                        }
-                        drawFrame(initPoints);
-                    }
-                });
             }
         });
     }
@@ -174,7 +185,7 @@ public class SimulatorActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit_joint) {
-            selectDrawer = false;
+            //selectDrawer = false;
             selectDriver = false;
             selectEditJoint = true;
             Toast.makeText(SimulatorActivity.this, "Select joint to edit.", Toast.LENGTH_LONG).show();
@@ -194,17 +205,17 @@ public class SimulatorActivity extends AppCompatActivity {
             });
 
         } else if (id == R.id.action_view_sim) {
-            selectDrawer = false;
+            //selectDrawer = false;
             selectEditJoint = false;
             selectDriver = true;
-            Toast.makeText(SimulatorActivity.this, "Select driving link.", Toast.LENGTH_LONG).show();
+            Toast.makeText(SimulatorActivity.this, "Select motor location.", Toast.LENGTH_LONG).show();
             okButton.setText("Animate");
             okButton.setVisibility(View.VISIBLE);
             okButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(focusIndex == -1 || points.isEmpty()) {
-                        Toast.makeText(SimulatorActivity.this, "Please select driving link and focus point.", Toast.LENGTH_LONG).show();
+                    if(motorIndex == -1) {
+                        Toast.makeText(SimulatorActivity.this, "Please select motor location.", Toast.LENGTH_LONG).show();
                         return;
                     }
                     animateMechanism(mSimulatorView);
@@ -214,25 +225,97 @@ public class SimulatorActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void drawFrame(ArrayList<Point> drawingPoints) {
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.i(TAG, "Touch");
+        if (event.getAction() != MotionEvent.ACTION_DOWN && event.getAction() != MotionEvent.ACTION_POINTER_DOWN) {
+            //Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
+            return true;
+        }
+
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        float xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
+        float yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
+
+        int maxDistance = displayMetrics.widthPixels/30;
+        if(selectDriver) {
+            Log.i(TAG, "Waiting for motor selection...");
+            Log.i(TAG, "x = " + xTouch + ", y = " + yTouch);
+            Joint motor = checkJointHit(xTouch, yTouch);
+            if(motor == null) {
+                return true;
+            } else if (motor.getConstraint() != Joint.FIXED) {
+                Toast.makeText(this, "The motor location must be a fixed joint.", Toast.LENGTH_LONG).show();
+            } else {
+                //fillPoints(driver);
+                motorIndex = mJoints.indexOf(motor);
+                Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
+                selectDriver = false;
+                //selectEditJoint = false;
+                //selectDrawer = true;
+                //Toast.makeText(this, "Select the focus point.", Toast.LENGTH_LONG).show();
+            }
+        /*} else if(selectDrawer) {
+            for (int i = 0; i < points.size(); i++) {
+                Log.i(TAG, "SelectDrawer: Touch at (" + xTouch + "," + yTouch + ")");
+                if (Math.abs(points.get(i).x - xTouch) < maxDistance && Math.abs(points.get(i).y - yTouch) < maxDistance) {
+                    focusIndex = i;
+                    Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
+                    selectDrawer = false;
+                    return true;
+                }
+            }*/
+        } else if(selectEditJoint) {
+            editJoint = checkJointHit(xTouch, yTouch);
+            if(editJoint == null) {
+                return true;
+            }
+            Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_LONG).show();
+            selectEditJoint = false;
+        }
+        return super.onGenericMotionEvent(event);
+    }
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mSimulatorView.stopThread();
+    }
+
+
+    private void drawFrame(List<Joint> drawingPoints) {
 
         Log.i(TAG, "drawing new frame");
 
         Bitmap drawableBitmap = backgroundBitmap.copy(backgroundBitmap.getConfig(), true);
         Canvas drawable = new Canvas(drawableBitmap);
 
-        if(focusIndex != -1) {
-            background.drawCircle((float) drawingPoints.get(focusIndex).x, (float) drawingPoints.get(focusIndex).y, 2, pathPaint);
+        //if(focusIndex != -1) {
+        // Draw motion profile
+        //background.drawCircle((float) drawingPoints.get(focusIndex).x, (float) drawingPoints.get(focusIndex).y, 2, pathPaint);
+        //}
 
-            drawable.drawLine((float) drawingPoints.get(0).x, (float) drawingPoints.get(0).y, (float) drawingPoints.get(1).x, (float) drawingPoints.get(1).y, linksPaint);
-            drawable.drawLine((float) drawingPoints.get(1).x, (float) drawingPoints.get(1).y, (float) drawingPoints.get(2).x, (float) drawingPoints.get(2).y, linksPaint);
-            drawable.drawLine((float) drawingPoints.get(2).x, (float) drawingPoints.get(2).y, (float) drawingPoints.get(3).x, (float) drawingPoints.get(3).y, linksPaint);
-            drawable.drawLine((float) drawingPoints.get(3).x, (float) drawingPoints.get(3).y, (float) drawingPoints.get(0).x, (float) drawingPoints.get(0).y, linksPaint);
+        // Draw links
+        for(Link link: mLinks) {
+            Joint joint1 = getJointbyId(link.getEndpoint1());
+            Joint joint2 = getJointbyId(link.getEndpoint2());
+            if(joint1 != null && joint2 != null) {
+                Point endpoint1 = new Point(joint1.getXCoord(), joint1.getYCoord());
+                Point endpoint2 = new Point(joint2.getXCoord(), joint2.getYCoord());
+
+                drawable.drawLine((float) endpoint1.x, (float) endpoint1.y, (float) endpoint2.x, (float) endpoint2.y, linksPaint);
+            }
         }
 
-        for(Point point: drawingPoints) {
-            Log.i(TAG, "Point at: (" + point.x + "," + point.y + ")");
-            drawable.drawCircle((float) point.x, (float) point.y, 8, jointsPaint);
+        // Draw joints & motion profiles
+        for(Joint joint: drawingPoints) {
+            //Log.i(TAG, "Point at: (" + point.x + "," + point.y + ")");
+            double x = joint.getXCoord();
+            double y = joint.getYCoord();
+            drawable.drawCircle((float) x, (float) y, 8, jointsPaint);
+            background.drawCircle((float) x, (float) y, 2, pathPaint);
         }
 
         mSimulatorView.drawBitmap(drawableBitmap);
@@ -241,12 +324,78 @@ public class SimulatorActivity extends AppCompatActivity {
 
     public void animateMechanism(View view) {
 
-        ArrayList<Point> workingPoints = convertCoordinates(points.get(0));
+        //List<Joint> editableJoints = new ArrayList<>(mJoints);
+        origin = points.get(motorIndex);
+        motor = mJoints.get(motorIndex);
+        motorPoint = convertCoordinates(new Point(motor.getXCoord(), motor.getYCoord()), origin);
 
-        assert getMagnitude(new Point(0,0), new Point(0, 4)) == 4;
-        assert getMagnitude(new Point(0, 0), new Point(4, 0)) == 4;
-        assert getMagnitude(new Point(0, 0), new Point(3, 4)) == 5;
-        double a = getMagnitude(workingPoints.get(0), workingPoints.get(1));
+        for(Joint joint1: mJoints) {
+            for(Joint joint2: mJoints) {
+                String name = joint1.getJointId() + "to" + joint2.getJointId();
+                Point point1 = new Point(joint1.getXCoord(), joint1.getYCoord());
+                Point point2 = new Point(joint2.getXCoord(), joint2.getYCoord());
+                radii.put(name, getMagnitude(point1, point2));
+            }
+        }
+
+        // Calculate starting angle
+        Integer driveLink1ID = motor.getLink1ID();
+        Point endpoint1 = getOtherEndpoint(driveLink1ID, motor.getJointId());
+        Integer driveLink2ID = motor.getLink2ID();
+        Point endpoint2 = getOtherEndpoint(driveLink2ID, motor.getJointId());
+        if(endpoint1 == null || endpoint2 == null) {
+            Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        theta1 = getAngle(endpoint1, motorPoint);
+        Log.i(TAG, "Theta1 = " + theta1);
+        theta2 = getAngle(endpoint2, motorPoint);
+        Log.i(TAG, "Theta2 = " + theta2);
+
+        for(double i = 0; i <= 2 * Math.PI; i = i + 0.05) {
+            for(Joint joint: mJoints) {
+                if(joint.getConstraint() == Joint.FIXED) {
+                    complete.add(joint);
+                    Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
+                }
+            }
+
+            // Simulate directly driven links
+            List<Joint> driveLink1Joints = getJointsOnLink(driveLink1ID);
+            for (Joint joint : driveLink1Joints) {
+                if (!complete.contains(joint)) {
+                    Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
+                    double radius = getMagnitude(calcPoint, motorPoint);
+                    Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta1 + i), radius * Math.sin(theta1 + i)), origin);
+                    joint.setXCoord(drawPoint.x);
+                    joint.setYCoord(drawPoint.y);
+                    complete.add(joint);
+                }
+            }
+            List<Joint> driveLink2Joints = getJointsOnLink(driveLink2ID);
+            for (Joint joint : driveLink2Joints) {
+                if (!complete.contains(joint)) {
+                    Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
+                    double radius = getMagnitude(calcPoint, motorPoint);
+                    Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta2 + i), radius * Math.sin(theta2 + i)), origin);
+                    joint.setXCoord(drawPoint.x);
+                    joint.setYCoord(drawPoint.y);
+                    complete.add(joint);
+                }
+            }
+
+            //while(complete.size() < mJoints.size()) {
+                iterate(1);
+            //}
+            if(kill) {
+                return;
+            }
+
+            drawFrame(complete);
+            complete.clear();
+        }
+
+        /*double a = getMagnitude(workingPoints.get(0), workingPoints.get(1));
         double b = getMagnitude(workingPoints.get(1), workingPoints.get(2));
         double c = getMagnitude(workingPoints.get(2), workingPoints.get(3));
         double d = getMagnitude(workingPoints.get(3), workingPoints.get(0));
@@ -301,7 +450,120 @@ public class SimulatorActivity extends AppCompatActivity {
                 Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
                 return;
             }
+        }*/
+    }
+
+    private void iterate(int index) {
+        Joint next = complete.get(index);
+        Log.i(TAG, "complete " + index + " is joint " + next.getJointName());
+        Integer link1id = next.getLink1ID();
+        if(link1id != null) {
+            simulate(next, link1id);
         }
+        if(kill) {
+            return;
+        }
+        Integer link2id = next.getLink2ID();
+        if(link2id != null) {
+            simulate(next, link2id);
+        }
+        if(kill) {
+            return;
+        }
+
+        index++;
+        if(index < complete.size()) {
+            iterate(index);
+        }
+    }
+
+    private void simulate(Joint joint0, int linkid) {
+        List<Joint> link1Joints = getJointsOnLink(linkid);
+        if(link1Joints.isEmpty()) {
+            return;
+        }
+        for(Joint joint1: link1Joints) {
+           // if(!complete.contains(joint1))  {
+                Integer link1id = joint1.getLink1ID();
+                //if(link1id != linkid) {
+                if(link1id != null) {
+                    completeSimulation(joint0, joint1, link1id);
+                }
+                if(kill) {
+                    return;
+                }
+                //}
+                Integer link2id = joint1.getLink2ID();
+               // if(link2id != linkid) {
+                if(link2id != null) {
+                    completeSimulation(joint0, joint1, link2id);
+                }
+                //}
+           // }
+        }
+    }
+
+    private void completeSimulation(Joint joint0, Joint joint1, int linkid) {
+        if(complete.contains(joint1)) {
+            return;
+        }
+        Point fixed1 = convertCoordinates(new Point(joint0.getXCoord(), joint0.getYCoord()), origin);
+        Log.i(TAG, "Fixed1 = " + joint0.getJointName());
+        Point free = convertCoordinates(new Point(joint1.getXCoord(), joint1.getYCoord()), origin);
+        Log.i(TAG, "Free = " + joint1.getJointName());
+        List<Joint> link2Joints = getJointsOnLink(linkid);
+        if(link2Joints.isEmpty()) {
+            return;
+        }
+        for(Joint joint2: link2Joints) {
+            if(complete.contains(joint2) && !joint2.equals(joint0)) {
+                Log.i(TAG, "Performing calculations for " + joint1.getJointName());
+                Point fixed2 = convertCoordinates(new Point(joint2.getXCoord(), joint2.getYCoord()), origin);
+                Log.i(TAG, "Fixed2 = " + joint2.getJointName());
+                try {
+                    double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
+                    double radius2 = radii.get(joint2.getJointId() + "to" + joint1.getJointId());
+
+                    double u = -1 * (fixed1.y - fixed2.y) / (fixed1.x - fixed2.x);
+                    double v = (sqr(radius2) - sqr(radius1) + sqr(fixed1.x) - sqr(fixed2.x) + sqr(fixed1.y) - sqr(fixed2.y)) / (2 * (fixed1.x - fixed2.x));
+                    double aQuad = sqr(u) + 1;
+                    double bQuad = 2 * u * v - 2 * fixed1.x * u - 2 * fixed1.y;
+                    double cQuad = sqr(v) - 2 * fixed1.x * v + sqr(fixed1.x) + sqr(fixed1.y) - sqr(radius1);
+                    double determinant = sqr(bQuad) - 4 * aQuad * cQuad;
+
+                    if (determinant < 0) {
+                        Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
+                        kill = true;
+                        return;
+                    }
+                    double y1 = (-1 * bQuad + Math.sqrt(determinant)) / (2 * aQuad);
+                    double y2 = (-1 * bQuad - Math.sqrt(determinant)) / (2 * aQuad);
+                    double x1 = u * y1 + v;
+                    double x2 = u * y2 + v;
+                    double mag1 = getMagnitude(new Point(x1, y1), free);
+                    Log.i(TAG, "Magnitude 1 = " + mag1);
+                    double mag2 = getMagnitude(new Point(x2, y2), free);
+                    Log.i(TAG, "Magnitude 2 = " + mag2);
+
+                    if (mag1 < mag2) {
+                        Point newPoint = reconvertCoordinates(new Point(x1, y1), origin);
+                        joint1.setXCoord(newPoint.x);
+                        joint1.setYCoord(newPoint.y);
+                    } else {
+                        Point newPoint = reconvertCoordinates(new Point(x2, y2), origin);
+                        joint1.setXCoord(newPoint.x);
+                        joint1.setYCoord(newPoint.y);
+                    }
+                } catch(NullPointerException npe) {
+                    Log.i(TAG, "no radius saved");
+                }
+                complete.add(joint1);
+            }
+        }
+    }
+
+    private double sqr(double number) {
+        return number * number;
     }
 
     private double getMagnitude(Point point1, Point point2) {
@@ -311,93 +573,109 @@ public class SimulatorActivity extends AppCompatActivity {
 
     private double getAngle(Point point1, Point point2) {
         Log.i(TAG, "In getAngle");
-        Pair<Double, Double> horizontal = new Pair(1.0, 0.0); // First vector is a unit horizontal vector
+        /*Pair<Double, Double> horizontal = new Pair(1.0, 0.0); // First vector is a unit horizontal vector
         Pair<Double, Double> vect2 = new Pair(point2.x - point1.x, point2.y - point1.y); // Second vector the vector between the given points
 
         // dot product = a1 * b1 + a2 * b2 + ... (a1 = 1 and a2 = 0 in this case)
         double dotProduct = horizontal.first * vect2.first + horizontal.second * vect2.second;
-        double magnitude = getMagnitude(point1, point2);
+        double magnitude = getMagnitude(point1, point2);*/
 
         // theta = cos-1(dot product of vectors/ product of vector magnitudes)
-        return Math.acos(dotProduct / magnitude);
+        return Math.atan((point2.y - point1.y) / (point2.x - point1.x));
     }
 
-    private ArrayList<Point> convertCoordinates (Point origin) {
+    private Point convertCoordinates (Point point, Point origin) {
         int yMax = background.getHeight();
-        ArrayList<Point> workingPoints = new ArrayList<>();
+
+        return new Point(point.x - origin.x, yMax - point.y - (yMax - origin.y));
+        /*ArrayList<Point> workingPoints = new ArrayList<>();
 
         for(Point point: points) {
             workingPoints.add(new Point(point.x - origin.x, yMax - point.y - (yMax - origin.y)));
         }
-        return workingPoints;
+        return workingPoints;*/
     }
 
-    private ArrayList<Point> reconvertCoordinates (ArrayList<Point> pointList, Point origin) {
+    private Point reconvertCoordinates (Point point, Point origin) {
         int yMax = background.getHeight();
-        ArrayList<Point> drawingPoints = new ArrayList<>();
+
+        return new Point(point.x + origin.x, yMax - (point.y + (yMax - origin.y)));
+        /*ArrayList<Point> drawingPoints = new ArrayList<>();
 
         for(Point point: pointList) {
             drawingPoints.add(new Point(point.x + origin.x, yMax - (point.y + (yMax - origin.y))));
         }
-        return drawingPoints;
+        return drawingPoints;*/
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        Log.i(TAG, "Touch");
-        if (event.getAction() != MotionEvent.ACTION_DOWN && event.getAction() != MotionEvent.ACTION_POINTER_DOWN) {
-            //Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
-            return true;
+    private Joint getJointbyId(int id) {
+        for(Joint joint: mJoints) {
+            if(joint.getJointId() == id) {
+                return joint;
+            }
         }
+        return null;
+    }
 
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        float xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
-        float yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
+    private Link getLinkById(int id) {
+        for(Link link: mLinks) {
+            if(link.getLinkId() == id) {
+                return link;
+            }
+        }
+        return null;
+    }
 
-        int maxDistance = 50;
-        if(selectDriver) {
-            Log.i(TAG, "Waiting for link selection...");
-            Log.i(TAG, "x = " + xTouch + ", y = " + yTouch);
-            Link driver = checkLinkHit(xTouch, yTouch);
-            if(driver == null) {
-                return true;
+
+    private List<Joint> getJointsOnLink(Integer linkID) {
+        List<Joint> linkJoints = new ArrayList<>();
+        for(Joint joint: mJoints) {
+            if(joint.getLink1ID() != null && joint.getLink1ID().equals(linkID)) {
+                linkJoints.add(joint);
+            }
+            if(joint.getLink2ID() != null && joint.getLink2ID().equals(linkID)) {
+                linkJoints.add(joint);
+            }
+        }
+        return linkJoints;
+    }
+
+
+    private Joint checkJointHit(float xTouch, float yTouch) {
+        int maxDistance = displayMetrics.widthPixels/30;
+        for(Joint joint: mJoints) {
+            Log.i(TAG, "SelectEditJoint: Touch at (" + xTouch + "," + yTouch + ")");
+            if (Math.abs(joint.getXCoord()- xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
+                return joint;
+            }
+        }
+        return null;
+    }
+
+    private Point getOtherEndpoint(Integer linkID, Integer jointID) {
+        Point endpoint;
+        try {
+            Link link = getLinkById(linkID);
+            Integer joint1ID = link.getEndpoint1();
+            Joint otherEndpoint;
+            if (jointID == joint1ID) {
+                Integer joint2ID = link.getEndpoint2();
+                otherEndpoint = getJointbyId(joint2ID);
             } else {
-                fillPoints(driver);
-                selectDriver = false;
-                selectEditJoint = false;
-                selectDrawer = true;
-                Toast.makeText(this, "Select the focus point.", Toast.LENGTH_LONG).show();
+                otherEndpoint = getJointbyId(joint1ID);
             }
-        } else if(selectDrawer) {
-            for (int i = 0; i < points.size(); i++) {
-                Log.i(TAG, "SelectDrawer: Touch at (" + xTouch + "," + yTouch + ")");
-                if (Math.abs(points.get(i).x - xTouch) < maxDistance && Math.abs(points.get(i).y - yTouch) < maxDistance) {
-                    focusIndex = i;
-                    Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
-                    selectDrawer = false;
-                    return true;
-                }
-            }
-        } else if(selectEditJoint) {
-            for(Joint joint: mJoints) {
-                Log.i(TAG, "SelectEditJoint: Touch at (" + xTouch + "," + yTouch + ")");
-                if (Math.abs(joint.getXCoord()- xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
-                    editJoint = joint;
-                    Toast.makeText(this, "Edit " + joint.getJointName() + "?", Toast.LENGTH_LONG).show();
-                    selectDrawer = false;
-                    return true;
-                }
-            }
+            endpoint = convertCoordinates(new Point(otherEndpoint.getXCoord(), otherEndpoint.getYCoord()), origin);
+        } catch (NullPointerException npe) {
+            return null;
         }
-        return super.onGenericMotionEvent(event);
+        return endpoint;
     }
 
     private Link checkLinkHit(float xTouch, float yTouch) {
         Log.i(TAG, "Looking for a match...");
         for(Link link: mLinks) {
-            int joint1_id = link.getEndpoint1();
-            int joint2_id = link.getEndpoint2();
+            Integer joint1_id = link.getEndpoint1();
+            Integer joint2_id = link.getEndpoint2();
             Joint point1 = getJointbyId(joint1_id);
             Joint point2 = getJointbyId(joint2_id);
 
@@ -418,23 +696,7 @@ public class SimulatorActivity extends AppCompatActivity {
         return null;
     }
 
-    private Joint getJointbyId(int id) {
-        for(Joint joint: mJoints) {
-            if(joint.getJointId() == id) {
-                return joint;
-            }
-        }
-        return null;
-    }
 
-    private Link getLinkById(int id) {
-        for(Link link: mLinks) {
-            if(link.getLinkId() == id) {
-                return link;
-            }
-        }
-        return null;
-    }
 
     private void fillPoints(Link driver) {
 
@@ -508,9 +770,5 @@ public class SimulatorActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mSimulatorView.stopThread();
-    }
+
 }

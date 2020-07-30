@@ -49,7 +49,7 @@
             android:parentActivityName=".activities.MainActivity" />
         <activity
             android:name=".activities.LinkEditorActivity"
-            android:parentActivityName=".activities.PrototypeCaptureActivity" />
+            android:parentActivityName=".activities.ViewPrototypeActivity" />
         <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

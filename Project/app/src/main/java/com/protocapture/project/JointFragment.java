@@ -77,8 +77,10 @@ public class JointFragment extends Fragment implements JointListAdapter.OnJointL
 
     @Override
     public void onDeleteJoint(int position) {
+        Log.i(TAG, "position = " + position);
         Integer jointID = jointList.get(position).getJointId();
         String jointName = jointList.get(position).getJointName();
+        Log.i(TAG, "Joint name = " + jointName);
         mJointViewModel.deleteJoint(jointID);
         Toast toast =
                 Toast.makeText(this.getContext(), "Deleted " + jointName, Toast.LENGTH_LONG);

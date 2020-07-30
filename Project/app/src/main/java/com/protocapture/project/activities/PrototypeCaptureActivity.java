@@ -15,6 +15,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -285,7 +287,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                         clickDone();
                     } else {
                         clickAdd();
-                        lines.clear();
                         createButton.setText(R.string.done_button);
                     }
                 }
@@ -353,6 +354,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
         } else {
             addLink();
+
         }
     }
 
@@ -368,6 +370,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
 
     private void addLink() {
+        Log.i(TAG, "in addLink");
         Link link = new Link();
         link.setParentID(mPrototype.getPrototypeId());
         String linkName = mPrototype.getPrototypeName() + "Link" + fakeID;
@@ -375,15 +378,33 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         fakeID++;
         link.setEndpoint1(lines.get(0).getJointId());
         link.setEndpoint2(lines.get(1).getJointId());
-        mLinkViewModel.insert(link);
+        Log.i(TAG, "there are " + lines.size() + " Joints in lines");
+        mLinkViewModel.getLink(linkName).observe(this, new Observer<Link> () {
+
+            @Override
+            public void onChanged(Link link) {
+                if(link == null) {
+                    return;
+                }
+                Log.i(TAG, "LinkID received");
+                Log.i(TAG, "there are " + lines.size() + " Joints in lines");
+                for(Joint joint: lines) {
+                    Log.i(TAG, "Adding id to joint");
+                    addLinkId(joint, link.getLinkId());
+                }
+                lines.clear();
+            }
+        } );
+        Log.i(TAG, "there are " + lines.size() + " Joints in lines");
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
         Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
+        mLinkViewModel.insert(link);
         Imgproc.line(drawable, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
     }
 
 
     private void saveBitmap() {
-        //Imgproc.cvtColor(mRgba, mRgba, CvType.CV_8U);
+
         Bitmap bitmap = Bitmap.createBitmap(drawable.cols(), drawable.rows(), Bitmap.Config.RGB_565);
         Utils.matToBitmap(drawable, bitmap);
         String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";
@@ -422,7 +443,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         if(joint.getLink1ID() == null) {
             Log.i(TAG, "Adding to link1");
             joint.setLink1ID(linkID);
-        } else if (joint.getLink2ID() == null) {
+        } else if (!joint.getLink1ID().equals(linkID) && joint.getLink2ID() == null) {
             Log.i(TAG, "Adding to link2");
             joint.setLink2ID(linkID);
         }
@@ -499,8 +520,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             case Surface.ROTATION_0:
                 yTouch = ((width - event.getX()) / width) * mRgba.rows();
                 xTouch = (event.getY() / height) * mRgba.cols();
-                //xTouch = (event.getX() / width) * mRgba.cols();
-                //yTouch = (event.getY() / height) * mRgba.rows();
                 break;
             case Surface.ROTATION_90:
                 xTouch = (event.getX() / width) * mRgba.cols();

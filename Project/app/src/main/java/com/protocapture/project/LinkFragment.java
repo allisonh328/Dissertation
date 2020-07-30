@@ -80,8 +80,10 @@ public class LinkFragment extends Fragment implements LinkListAdapter.OnLinkList
 
     @Override
     public void onDeleteLink(int position) {
+        Log.i(TAG, "position = " + position);
         Integer linkID = linkList.get(position).getLinkId();
         String linkName = linkList.get(position).getLinkName();
+        Log.i(TAG, "link name = " + linkName);
         mLinkViewModel.deleteLink(linkID);
         Toast toast =
                 Toast.makeText(this.getContext(), "Deleted " + linkName, Toast.LENGTH_LONG);
