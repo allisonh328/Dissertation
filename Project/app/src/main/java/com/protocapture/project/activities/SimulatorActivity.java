@@ -458,6 +458,7 @@ public class SimulatorActivity extends AppCompatActivity {
         Log.i(TAG, "complete " + index + " is joint " + next.getJointName());
         Integer link1id = next.getLink1ID();
         if(link1id != null) {
+            Log.i(TAG, "Trying link 1 of joint " + next.getJointName());
             simulate(next, link1id);
         }
         if(kill) {
@@ -465,6 +466,7 @@ public class SimulatorActivity extends AppCompatActivity {
         }
         Integer link2id = next.getLink2ID();
         if(link2id != null) {
+            Log.i(TAG, "Trying link 2 of joint " + next.getJointName());
             simulate(next, link2id);
         }
         if(kill) {
@@ -483,10 +485,12 @@ public class SimulatorActivity extends AppCompatActivity {
             return;
         }
         for(Joint joint1: link1Joints) {
-           // if(!complete.contains(joint1))  {
+            if(!complete.contains(joint1))  {
+                Log.i(TAG, "Found free joint " + joint1.getJointName());
                 Integer link1id = joint1.getLink1ID();
                 //if(link1id != linkid) {
                 if(link1id != null) {
+                    Log.i(TAG, "Trying link 1 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link1id);
                 }
                 if(kill) {
@@ -496,10 +500,11 @@ public class SimulatorActivity extends AppCompatActivity {
                 Integer link2id = joint1.getLink2ID();
                // if(link2id != linkid) {
                 if(link2id != null) {
+                    Log.i(TAG, "Trying link2 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link2id);
                 }
                 //}
-           // }
+            }
         }
     }
 
@@ -507,59 +512,68 @@ public class SimulatorActivity extends AppCompatActivity {
         if(complete.contains(joint1)) {
             return;
         }
-        Point fixed1 = convertCoordinates(new Point(joint0.getXCoord(), joint0.getYCoord()), origin);
-        Log.i(TAG, "Fixed1 = " + joint0.getJointName());
-        Point free = convertCoordinates(new Point(joint1.getXCoord(), joint1.getYCoord()), origin);
-        Log.i(TAG, "Free = " + joint1.getJointName());
+
+        Joint joint2 = null;
         List<Joint> link2Joints = getJointsOnLink(linkid);
         if(link2Joints.isEmpty()) {
             return;
         }
-        for(Joint joint2: link2Joints) {
-            if(complete.contains(joint2) && !joint2.equals(joint0)) {
-                Log.i(TAG, "Performing calculations for " + joint1.getJointName());
-                Point fixed2 = convertCoordinates(new Point(joint2.getXCoord(), joint2.getYCoord()), origin);
-                Log.i(TAG, "Fixed2 = " + joint2.getJointName());
-                try {
-                    double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
-                    double radius2 = radii.get(joint2.getJointId() + "to" + joint1.getJointId());
-
-                    double u = -1 * (fixed1.y - fixed2.y) / (fixed1.x - fixed2.x);
-                    double v = (sqr(radius2) - sqr(radius1) + sqr(fixed1.x) - sqr(fixed2.x) + sqr(fixed1.y) - sqr(fixed2.y)) / (2 * (fixed1.x - fixed2.x));
-                    double aQuad = sqr(u) + 1;
-                    double bQuad = 2 * u * v - 2 * fixed1.x * u - 2 * fixed1.y;
-                    double cQuad = sqr(v) - 2 * fixed1.x * v + sqr(fixed1.x) + sqr(fixed1.y) - sqr(radius1);
-                    double determinant = sqr(bQuad) - 4 * aQuad * cQuad;
-
-                    if (determinant < 0) {
-                        Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
-                        kill = true;
-                        return;
-                    }
-                    double y1 = (-1 * bQuad + Math.sqrt(determinant)) / (2 * aQuad);
-                    double y2 = (-1 * bQuad - Math.sqrt(determinant)) / (2 * aQuad);
-                    double x1 = u * y1 + v;
-                    double x2 = u * y2 + v;
-                    double mag1 = getMagnitude(new Point(x1, y1), free);
-                    Log.i(TAG, "Magnitude 1 = " + mag1);
-                    double mag2 = getMagnitude(new Point(x2, y2), free);
-                    Log.i(TAG, "Magnitude 2 = " + mag2);
-
-                    if (mag1 < mag2) {
-                        Point newPoint = reconvertCoordinates(new Point(x1, y1), origin);
-                        joint1.setXCoord(newPoint.x);
-                        joint1.setYCoord(newPoint.y);
-                    } else {
-                        Point newPoint = reconvertCoordinates(new Point(x2, y2), origin);
-                        joint1.setXCoord(newPoint.x);
-                        joint1.setYCoord(newPoint.y);
-                    }
-                } catch(NullPointerException npe) {
-                    Log.i(TAG, "no radius saved");
-                }
-                complete.add(joint1);
+        for(Joint joint: link2Joints) {
+            if (complete.contains(joint) && !joint.equals(joint0)) {
+                joint2 = joint;
+                Log.i(TAG, "Found second fixed joint: " + joint2.getJointName());
             }
         }
+        if(joint2 == null) {
+            return;
+        }
+        try {
+            Point fixed1 = convertCoordinates(new Point(joint0.getXCoord(), joint0.getYCoord()), origin);
+            Log.i(TAG, "Fixed1 = " + joint0.getJointName());
+            Point free = convertCoordinates(new Point(joint1.getXCoord(), joint1.getYCoord()), origin);
+            Log.i(TAG, "Free = " + joint1.getJointName());
+            Point fixed2 = convertCoordinates(new Point(joint2.getXCoord(), joint2.getYCoord()), origin);
+            Log.i(TAG, "Fixed2 = " + joint2.getJointName());
+            double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
+            double radius2 = radii.get(joint2.getJointId() + "to" + joint1.getJointId());
+
+            double u = -1 * (fixed1.y - fixed2.y) / (fixed1.x - fixed2.x);
+            double v = (sqr(radius2) - sqr(radius1) + sqr(fixed1.x) - sqr(fixed2.x) + sqr(fixed1.y) - sqr(fixed2.y)) / (2 * (fixed1.x - fixed2.x));
+            double aQuad = sqr(u) + 1;
+            double bQuad = 2 * u * v - 2 * fixed1.x * u - 2 * fixed1.y;
+            double cQuad = sqr(v) - 2 * fixed1.x * v + sqr(fixed1.x) + sqr(fixed1.y) - sqr(radius1);
+            double determinant = sqr(bQuad) - 4 * aQuad * cQuad;
+
+            if (determinant < 0) {
+                Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
+                kill = true;
+                return;
+            }
+            double y1 = (-1 * bQuad + Math.sqrt(determinant)) / (2 * aQuad);
+            double y2 = (-1 * bQuad - Math.sqrt(determinant)) / (2 * aQuad);
+            double x1 = u * y1 + v;
+            double x2 = u * y2 + v;
+            double mag1 = getMagnitude(new Point(x1, y1), free);
+            Log.i(TAG, "Magnitude 1 = " + mag1);
+            double mag2 = getMagnitude(new Point(x2, y2), free);
+            Log.i(TAG, "Magnitude 2 = " + mag2);
+
+            if (mag1 < mag2) {
+                Point newPoint = reconvertCoordinates(new Point(x1, y1), origin);
+                joint1.setXCoord(newPoint.x);
+                joint1.setYCoord(newPoint.y);
+            } else {
+                Point newPoint = reconvertCoordinates(new Point(x2, y2), origin);
+                joint1.setXCoord(newPoint.x);
+                joint1.setYCoord(newPoint.y);
+            }
+        } catch(NullPointerException npe) {
+            Log.i(TAG, "no radius saved");
+        }
+        complete.add(joint1);
+        Log.i(TAG, "Added " + joint1.getJointName() + " to complete");
+
+
     }
 
     private double sqr(double number) {
