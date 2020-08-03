@@ -65,10 +65,6 @@ public class SimulatorActivity extends AppCompatActivity {
     private Point origin;
     private ArrayList<Joint> complete = new ArrayList<>();
     private HashMap<String, Double> radii = new HashMap<>();
-    private Joint motor;
-    private Point motorPoint;
-    private double theta1;
-    private double theta2;
 
     private Bitmap backgroundBitmap;
     private Canvas background;
@@ -108,19 +104,19 @@ public class SimulatorActivity extends AppCompatActivity {
         // Set up Paint to draw the motion profile
         pathPaint = new Paint();
         pathPaint.setAntiAlias(true);
-        pathPaint.setColor(Color.GREEN);
+        pathPaint.setColor(Color.MAGENTA);
         pathPaint.setStrokeWidth(4);
 
         // Set up Paint to draw the joints (connecting points)
         jointsPaint = new Paint();
         jointsPaint.setAntiAlias(true);
-        jointsPaint.setColor(Color.MAGENTA);
+        jointsPaint.setColor(Color.BLACK);
         jointsPaint.setStyle(Paint.Style.FILL);
 
         // Set up Paint to draw the links (lines)
         linksPaint = new Paint();
         linksPaint.setAntiAlias(true);
-        linksPaint.setColor(Color.MAGENTA);
+        linksPaint.setColor(Color.BLACK);
         linksPaint.setStrokeWidth(4);
 
         mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
@@ -292,11 +288,6 @@ public class SimulatorActivity extends AppCompatActivity {
         Bitmap drawableBitmap = backgroundBitmap.copy(backgroundBitmap.getConfig(), true);
         Canvas drawable = new Canvas(drawableBitmap);
 
-        //if(focusIndex != -1) {
-        // Draw motion profile
-        //background.drawCircle((float) drawingPoints.get(focusIndex).x, (float) drawingPoints.get(focusIndex).y, 2, pathPaint);
-        //}
-
         // Draw links
         for(Link link: mLinks) {
             Joint joint1 = getJointbyId(link.getEndpoint1());
@@ -324,11 +315,13 @@ public class SimulatorActivity extends AppCompatActivity {
 
     public void animateMechanism(View view) {
 
-        //List<Joint> editableJoints = new ArrayList<>(mJoints);
+        // Initialise variables
+        complete.clear();
         origin = points.get(motorIndex);
-        motor = mJoints.get(motorIndex);
-        motorPoint = convertCoordinates(new Point(motor.getXCoord(), motor.getYCoord()), origin);
+        Joint motor = mJoints.get(motorIndex);
+        Point motorPoint = convertCoordinates(new Point(motor.getXCoord(), motor.getYCoord()), origin);
 
+        // Add distances between joints (radii for later calculations)
         for(Joint joint1: mJoints) {
             for(Joint joint2: mJoints) {
                 String name = joint1.getJointId() + "to" + joint2.getJointId();
@@ -338,20 +331,23 @@ public class SimulatorActivity extends AppCompatActivity {
             }
         }
 
-        // Calculate starting angle
+        // Calculate starting angles
+        double theta1 = 0;
+        double theta2 = 0;
         Integer driveLink1ID = motor.getLink1ID();
-        Point endpoint1 = getOtherEndpoint(driveLink1ID, motor.getJointId());
-        Integer driveLink2ID = motor.getLink2ID();
-        Point endpoint2 = getOtherEndpoint(driveLink2ID, motor.getJointId());
-        if(endpoint1 == null || endpoint2 == null) {
-            Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
-            return;
+        if(driveLink1ID != null) {
+            Point endpoint1 = getOtherEndpoint(driveLink1ID, motor.getJointId());
+            theta1 = getAngle(endpoint1, motorPoint);
+            Log.i(TAG, "Theta1 = " + theta1);
         }
-        theta1 = getAngle(endpoint1, motorPoint);
-        Log.i(TAG, "Theta1 = " + theta1);
-        theta2 = getAngle(endpoint2, motorPoint);
-        Log.i(TAG, "Theta2 = " + theta2);
+        Integer driveLink2ID = motor.getLink2ID();
+        if(driveLink2ID != null) {
+            Point endpoint2 = getOtherEndpoint(driveLink2ID, motor.getJointId());
+            theta2 = getAngle(endpoint2, motorPoint);
+            Log.i(TAG, "Theta2 = " + theta2);
+        }
 
+        // Add all FIXED joints to the "complete" list (their position is fixed)
         for(double i = 0; i <= 2 * Math.PI; i = i + 0.05) {
             for(Joint joint: mJoints) {
                 if(joint.getConstraint() == Joint.FIXED) {
@@ -359,103 +355,56 @@ public class SimulatorActivity extends AppCompatActivity {
                     Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
                 }
             }
-
-            // Simulate directly driven links
-            List<Joint> driveLink1Joints = getJointsOnLink(driveLink1ID);
-            for (Joint joint : driveLink1Joints) {
-                if (!complete.contains(joint)) {
-                    Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
-                    double radius = getMagnitude(calcPoint, motorPoint);
-                    Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta1 + i), radius * Math.sin(theta1 + i)), origin);
-                    joint.setXCoord(drawPoint.x);
-                    joint.setYCoord(drawPoint.y);
-                    complete.add(joint);
-                }
-            }
-            List<Joint> driveLink2Joints = getJointsOnLink(driveLink2ID);
-            for (Joint joint : driveLink2Joints) {
-                if (!complete.contains(joint)) {
-                    Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
-                    double radius = getMagnitude(calcPoint, motorPoint);
-                    Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta2 + i), radius * Math.sin(theta2 + i)), origin);
-                    joint.setXCoord(drawPoint.x);
-                    joint.setYCoord(drawPoint.y);
-                    complete.add(joint);
-                }
+            for(Joint joint: complete) {
+                Log.i(TAG, "complete contains: " + joint.getJointName());
             }
 
-            //while(complete.size() < mJoints.size()) {
-                iterate(1);
-            //}
+            // Simulate links driven directly by motor
+            if(driveLink1ID != null) {
+                List<Joint> driveLink1Joints = getJointsOnLink(driveLink1ID);
+                for (Joint joint : driveLink1Joints) {
+                    if (!complete.contains(joint)) {
+                        Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
+                        double radius = getMagnitude(calcPoint, motorPoint);
+                        Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta1 + i), radius * Math.sin(theta1 + i)), origin);
+                        joint.setXCoord(drawPoint.x);
+                        joint.setYCoord(drawPoint.y);
+                        complete.add(joint);
+                    }
+                }
+            }
+            if(driveLink2ID != null) {
+                List<Joint> driveLink2Joints = getJointsOnLink(driveLink2ID);
+                for (Joint joint : driveLink2Joints) {
+                    if (!complete.contains(joint)) {
+                        Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
+                        double radius = getMagnitude(calcPoint, motorPoint);
+                        Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta2 + i), radius * Math.sin(theta2 + i)), origin);
+                        joint.setXCoord(drawPoint.x);
+                        joint.setYCoord(drawPoint.y);
+                        complete.add(joint);
+                    }
+                }
+            }
+
+            // Iterate to finish simulation
+            iterate(1);
             if(kill) {
                 return;
             }
 
+            // Once all locations have been calculated, draw the step then start over
             drawFrame(complete);
             complete.clear();
         }
-
-        /*double a = getMagnitude(workingPoints.get(0), workingPoints.get(1));
-        double b = getMagnitude(workingPoints.get(1), workingPoints.get(2));
-        double c = getMagnitude(workingPoints.get(2), workingPoints.get(3));
-        double d = getMagnitude(workingPoints.get(3), workingPoints.get(0));
-
-        double gamma = getAngle(workingPoints.get(0), workingPoints.get(3));
-        Log.i(TAG, "gamma = " + gamma);
-        double thetaStart = getAngle(workingPoints.get(0), workingPoints.get(1)) - gamma;
-        Log.i(TAG, "thetaStart = " + thetaStart);
-
-        for(double theta = thetaStart; theta < thetaStart + 2 * Math.PI; theta = theta + 0.05) {
-            double e = Math.sqrt(a * a + d * d - 2 * a * d * Math.cos(theta));
-            double alpha = Math.asin((a * Math.sin(theta)) / e);
-            double beta = Math.acos((e * e + c * c - b * b) / (2 * e * c));
-            double phi = alpha + beta;
-
-            Point A = workingPoints.get(0);
-            Point D = workingPoints.get(3);
-            Point B = new Point(a * Math.cos(theta + gamma), a * Math.sin(theta + gamma));
-            Point C;
-
-            double u = -1 * (B.y - D.y) / (B.x - D.x);
-            double v = (c * c - b * b + B.x * B.x - D.x * D.x + B.y * B.y - D.y * D.y) / (2 * (B.x - D.x));
-            double aQuad = u * u + 1;
-            double bQuad = 2 * u * v - 2 * B.x * u - 2 * B.y;
-            double cQuad = v * v - 2* B.x * v + B.x * B.x + B.y * B.y - b * b;
-            double determinant = bQuad * bQuad - 4 * aQuad * cQuad;
-
-            if(determinant >= 0) {
-                double y1 = (-1 * bQuad + Math.sqrt(determinant)) / (2 * aQuad);
-                double y2 = (-1 * bQuad - Math.sqrt(determinant)) / (2 * aQuad);
-                double x1 = u * y1 + v;
-                double x2 = u * y2 + v;
-                double mag1 = getMagnitude(new Point(x1, y1), workingPoints.get(2));
-                double mag2 = getMagnitude(new Point(x2, y2), workingPoints.get(2));
-
-                if (mag1 < mag2) {
-                    C = new Point(x1, y1);
-                } else {
-                    C = new Point(x2, y2);
-                }
-
-                try {
-                    Thread.sleep(40);
-                } catch (InterruptedException ie) {
-                    return;
-                }
-
-                ArrayList<Point> newPoints = new ArrayList<>(Arrays.asList(A, B, C, D));
-                ArrayList<Point> drawingPoints = reconvertCoordinates(newPoints, points.get(0));
-                drawFrame(drawingPoints);
-            } else {
-                Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
-                return;
-            }
-        }*/
     }
 
     private void iterate(int index) {
+        // Get the next joint from the "complete" list (location has been calculated)
         Joint next = complete.get(index);
         Log.i(TAG, "complete " + index + " is joint " + next.getJointName());
+
+        // Check the first link for a new point to calculate
         Integer link1id = next.getLink1ID();
         if(link1id != null) {
             Log.i(TAG, "Trying link 1 of joint " + next.getJointName());
@@ -464,6 +413,8 @@ public class SimulatorActivity extends AppCompatActivity {
         if(kill) {
             return;
         }
+
+        // Check the second link for a new point to calculate
         Integer link2id = next.getLink2ID();
         if(link2id != null) {
             Log.i(TAG, "Trying link 2 of joint " + next.getJointName());
@@ -473,6 +424,7 @@ public class SimulatorActivity extends AppCompatActivity {
             return;
         }
 
+        // Repeat with next joint
         index++;
         if(index < complete.size()) {
             iterate(index);
@@ -480,15 +432,22 @@ public class SimulatorActivity extends AppCompatActivity {
     }
 
     private void simulate(Joint joint0, int linkid) {
+
+        // Get all the joints on the selected link
         List<Joint> link1Joints = getJointsOnLink(linkid);
         if(link1Joints.isEmpty()) {
             return;
         }
+
+        // Look for any joints that are still "free" (location not calculated yet)
         for(Joint joint1: link1Joints) {
             if(!complete.contains(joint1))  {
+
+                // Once a free joint has been located...
                 Log.i(TAG, "Found free joint " + joint1.getJointName());
+
+                // Check its first link for another fixed point (location already calculated)
                 Integer link1id = joint1.getLink1ID();
-                //if(link1id != linkid) {
                 if(link1id != null) {
                     Log.i(TAG, "Trying link 1 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link1id);
@@ -496,23 +455,24 @@ public class SimulatorActivity extends AppCompatActivity {
                 if(kill) {
                     return;
                 }
-                //}
+
+                // Check its second link for another fixed point (Location already calculated)
                 Integer link2id = joint1.getLink2ID();
-               // if(link2id != linkid) {
                 if(link2id != null) {
                     Log.i(TAG, "Trying link2 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link2id);
                 }
-                //}
             }
         }
     }
 
     private void completeSimulation(Joint joint0, Joint joint1, int linkid) {
+        // If the location of this joint has already been calculated, return (could happen on second link)
         if(complete.contains(joint1)) {
             return;
         }
 
+        // Look for second fixed point on link
         Joint joint2 = null;
         List<Joint> link2Joints = getJointsOnLink(linkid);
         if(link2Joints.isEmpty()) {
@@ -527,16 +487,23 @@ public class SimulatorActivity extends AppCompatActivity {
         if(joint2 == null) {
             return;
         }
+
+        // Calculate free joints location using intersection of two circles method
         try {
+
+            // Convert all points into a coordinate system that's easy to deal with
             Point fixed1 = convertCoordinates(new Point(joint0.getXCoord(), joint0.getYCoord()), origin);
             Log.i(TAG, "Fixed1 = " + joint0.getJointName());
             Point free = convertCoordinates(new Point(joint1.getXCoord(), joint1.getYCoord()), origin);
             Log.i(TAG, "Free = " + joint1.getJointName());
             Point fixed2 = convertCoordinates(new Point(joint2.getXCoord(), joint2.getYCoord()), origin);
             Log.i(TAG, "Fixed2 = " + joint2.getJointName());
+
+            // Get radii from list
             double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
             double radius2 = radii.get(joint2.getJointId() + "to" + joint1.getJointId());
 
+            // Lots of weird math to locate circle intersections
             double u = -1 * (fixed1.y - fixed2.y) / (fixed1.x - fixed2.x);
             double v = (sqr(radius2) - sqr(radius1) + sqr(fixed1.x) - sqr(fixed2.x) + sqr(fixed1.y) - sqr(fixed2.y)) / (2 * (fixed1.x - fixed2.x));
             double aQuad = sqr(u) + 1;
@@ -544,20 +511,26 @@ public class SimulatorActivity extends AppCompatActivity {
             double cQuad = sqr(v) - 2 * fixed1.x * v + sqr(fixed1.x) + sqr(fixed1.y) - sqr(radius1);
             double determinant = sqr(bQuad) - 4 * aQuad * cQuad;
 
+            // If determinant is less than zero, equations are unsolvable and there is no solution
             if (determinant < 0) {
                 Toast.makeText(this, "Impossible to complete simulation.", Toast.LENGTH_LONG).show();
                 kill = true;
                 return;
             }
+
+            // Calculate the two possible next locations for the free joint
             double y1 = (-1 * bQuad + Math.sqrt(determinant)) / (2 * aQuad);
             double y2 = (-1 * bQuad - Math.sqrt(determinant)) / (2 * aQuad);
             double x1 = u * y1 + v;
             double x2 = u * y2 + v;
+
+            // Find the location that is closest to the current location of the free joint
             double mag1 = getMagnitude(new Point(x1, y1), free);
             Log.i(TAG, "Magnitude 1 = " + mag1);
             double mag2 = getMagnitude(new Point(x2, y2), free);
             Log.i(TAG, "Magnitude 2 = " + mag2);
 
+            // Change the location of the free joint to the correct point
             if (mag1 < mag2) {
                 Point newPoint = reconvertCoordinates(new Point(x1, y1), origin);
                 joint1.setXCoord(newPoint.x);
@@ -570,10 +543,10 @@ public class SimulatorActivity extends AppCompatActivity {
         } catch(NullPointerException npe) {
             Log.i(TAG, "no radius saved");
         }
+
+        // Add the newly calculated joint to the complete list
         complete.add(joint1);
         Log.i(TAG, "Added " + joint1.getJointName() + " to complete");
-
-
     }
 
     private double sqr(double number) {
@@ -581,45 +554,21 @@ public class SimulatorActivity extends AppCompatActivity {
     }
 
     private double getMagnitude(Point point1, Point point2) {
-
-        return Math.sqrt((point2.x - point1.x) * (point2.x - point1.x) + (point2.y - point1.y) * (point2.y - point1.y));
+        return Math.sqrt(sqr(point2.x - point1.x) + sqr(point2.y - point1.y));
     }
 
     private double getAngle(Point point1, Point point2) {
-        Log.i(TAG, "In getAngle");
-        /*Pair<Double, Double> horizontal = new Pair(1.0, 0.0); // First vector is a unit horizontal vector
-        Pair<Double, Double> vect2 = new Pair(point2.x - point1.x, point2.y - point1.y); // Second vector the vector between the given points
-
-        // dot product = a1 * b1 + a2 * b2 + ... (a1 = 1 and a2 = 0 in this case)
-        double dotProduct = horizontal.first * vect2.first + horizontal.second * vect2.second;
-        double magnitude = getMagnitude(point1, point2);*/
-
-        // theta = cos-1(dot product of vectors/ product of vector magnitudes)
         return Math.atan((point2.y - point1.y) / (point2.x - point1.x));
     }
 
     private Point convertCoordinates (Point point, Point origin) {
         int yMax = background.getHeight();
-
         return new Point(point.x - origin.x, yMax - point.y - (yMax - origin.y));
-        /*ArrayList<Point> workingPoints = new ArrayList<>();
-
-        for(Point point: points) {
-            workingPoints.add(new Point(point.x - origin.x, yMax - point.y - (yMax - origin.y)));
-        }
-        return workingPoints;*/
     }
 
     private Point reconvertCoordinates (Point point, Point origin) {
         int yMax = background.getHeight();
-
         return new Point(point.x + origin.x, yMax - (point.y + (yMax - origin.y)));
-        /*ArrayList<Point> drawingPoints = new ArrayList<>();
-
-        for(Point point: pointList) {
-            drawingPoints.add(new Point(point.x + origin.x, yMax - (point.y + (yMax - origin.y))));
-        }
-        return drawingPoints;*/
     }
 
     private Joint getJointbyId(int id) {
@@ -646,11 +595,14 @@ public class SimulatorActivity extends AppCompatActivity {
         for(Joint joint: mJoints) {
             if(joint.getLink1ID() != null && joint.getLink1ID().equals(linkID)) {
                 linkJoints.add(joint);
+                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
             if(joint.getLink2ID() != null && joint.getLink2ID().equals(linkID)) {
                 linkJoints.add(joint);
+                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
         }
+
         return linkJoints;
     }
 

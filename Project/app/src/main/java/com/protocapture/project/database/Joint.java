@@ -29,8 +29,6 @@ public class Joint {
 
     public static final int FREE = 0;
     public static final int FIXED = 1;
-    public static final int HORIZONTAL_CONSTRAINED = 2;
-    public static final int VERTICAL_CONSTRAINED = 3;
 
     @PrimaryKey(autoGenerate = true)
     @NonNull

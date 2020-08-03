@@ -63,6 +63,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class PrototypeCaptureActivity extends AppCompatActivity implements View.OnTouchListener, CameraBridgeViewBase.CvCameraViewListener2{
@@ -88,6 +89,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private Integer fakeID = 1;
     private List<Joint> mJoints;
     private List<Link> mLinks;
+    private HashMap<String, List<Joint>> linkList = new HashMap();
 
     private CameraBridgeViewBase mOpenCvCameraView;
     private WindowManager windowManager;
@@ -329,23 +331,21 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
 
     private void clickDone() {
-        mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(PrototypeCaptureActivity.this, new Observer<List<Link>>() {
-            @Override
-            public void onChanged(List<Link> links) {
-                for(Link link: links) {
-                    Joint joint1 = getJointbyId(link.getEndpoint1());
-                    addLinkId(joint1, link.getLinkId());
-                    Joint joint2 = getJointbyId(link.getEndpoint2());
-                    addLinkId(joint2, link.getLinkId());
+        for(String linkName: linkList.keySet()) {
+            for(Link link: mLinks) {
+                if(link.getLinkName().equals(linkName)) {
+                    List<Joint> joints = linkList.get(linkName);
+                    for (Joint joint: joints) {
+                        addLinkId(joint, link.getLinkId());
+                    }
                 }
-                mJointViewModel.updateJoints(mJoints);
-
-                saveBitmap();
-                Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
-                intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
-                startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
             }
-        });
+        }
+        mJointViewModel.updateJoints(mJoints);
+        saveBitmap();
+        Intent intent = new Intent(PrototypeCaptureActivity.this, ViewPrototypeActivity.class);
+        intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
+        startActivityForResult(intent, VIEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
     }
 
 
@@ -354,7 +354,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             Toast.makeText(PrototypeCaptureActivity.this, "Please select at least 2 joints", Toast.LENGTH_LONG).show();
         } else {
             addLink();
-
+            lines.clear();
         }
     }
 
@@ -379,26 +379,10 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         link.setEndpoint1(lines.get(0).getJointId());
         link.setEndpoint2(lines.get(1).getJointId());
         Log.i(TAG, "there are " + lines.size() + " Joints in lines");
-        mLinkViewModel.getLink(linkName).observe(this, new Observer<Link> () {
-
-            @Override
-            public void onChanged(Link link) {
-                if(link == null) {
-                    return;
-                }
-                Log.i(TAG, "LinkID received");
-                Log.i(TAG, "there are " + lines.size() + " Joints in lines");
-                for(Joint joint: lines) {
-                    Log.i(TAG, "Adding id to joint");
-                    addLinkId(joint, link.getLinkId());
-                }
-                lines.clear();
-            }
-        } );
-        Log.i(TAG, "there are " + lines.size() + " Joints in lines");
+        mLinkViewModel.insert(link);
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
         Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
-        mLinkViewModel.insert(link);
+        linkList.put(linkName, new ArrayList<Joint>(lines));
         Imgproc.line(drawable, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
     }
 
