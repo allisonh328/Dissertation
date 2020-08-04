@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.MotionEventCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -51,6 +52,7 @@ public class SimulatorActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "com.example.project.activity.ViewPrototypeActivity.MESSAGE";
     private final static String TAG = "ALLISON";
     private final static int JOINT_EDITOR_REQUEST_CODE = 1;
+    private int mActivePointerId = -1;
 
     private DisplayMetrics displayMetrics = new DisplayMetrics();
     private SimulatorView mSimulatorView;
@@ -65,6 +67,7 @@ public class SimulatorActivity extends AppCompatActivity {
     private Point origin;
     private ArrayList<Joint> complete = new ArrayList<>();
     private HashMap<String, Double> radii = new HashMap<>();
+    private Joint match = null;
 
     private Bitmap backgroundBitmap;
     private Canvas background;
@@ -224,51 +227,75 @@ public class SimulatorActivity extends AppCompatActivity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
         Log.i(TAG, "Touch");
-        if (event.getAction() != MotionEvent.ACTION_DOWN && event.getAction() != MotionEvent.ACTION_POINTER_DOWN) {
-            //Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
-            return true;
-        }
+        float xTouch = -1;
+        float yTouch = -1;
 
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        float xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
-        float yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
+        switch(event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+                xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
+                yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
+                match = checkJointHit(xTouch, yTouch);
 
-        int maxDistance = displayMetrics.widthPixels/30;
-        if(selectDriver) {
-            Log.i(TAG, "Waiting for motor selection...");
-            Log.i(TAG, "x = " + xTouch + ", y = " + yTouch);
-            Joint motor = checkJointHit(xTouch, yTouch);
-            if(motor == null) {
-                return true;
-            } else if (motor.getConstraint() != Joint.FIXED) {
-                Toast.makeText(this, "The motor location must be a fixed joint.", Toast.LENGTH_LONG).show();
-            } else {
-                //fillPoints(driver);
-                motorIndex = mJoints.indexOf(motor);
-                Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
-                selectDriver = false;
-                //selectEditJoint = false;
-                //selectDrawer = true;
-                //Toast.makeText(this, "Select the focus point.", Toast.LENGTH_LONG).show();
-            }
-        /*} else if(selectDrawer) {
-            for (int i = 0; i < points.size(); i++) {
-                Log.i(TAG, "SelectDrawer: Touch at (" + xTouch + "," + yTouch + ")");
-                if (Math.abs(points.get(i).x - xTouch) < maxDistance && Math.abs(points.get(i).y - yTouch) < maxDistance) {
-                    focusIndex = i;
-                    Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
-                    selectDrawer = false;
-                    return true;
+                //int maxDistance = displayMetrics.widthPixels/30;
+                if (selectDriver) {
+                    Log.i(TAG, "Waiting for motor selection...");
+                    Log.i(TAG, "x = " + xTouch + ", y = " + yTouch);
+                    if (match == null) {
+                        return true;
+                    } else if (match.getConstraint() != Joint.FIXED) {
+                        Toast.makeText(this, "The motor location must be a fixed joint.", Toast.LENGTH_LONG).show();
+                    } else {
+                        //fillPoints(driver);
+                        motorIndex = mJoints.indexOf(match);
+                        Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
+                        //selectEditJoint = false;
+                        //selectDrawer = true;
+                        //Toast.makeText(this, "Select the focus point.", Toast.LENGTH_LONG).show();
+                    }
+            /*} else if(selectDrawer) {
+                for (int i = 0; i < points.size(); i++) {
+                    Log.i(TAG, "SelectDrawer: Touch at (" + xTouch + "," + yTouch + ")");
+                    if (Math.abs(points.get(i).x - xTouch) < maxDistance && Math.abs(points.get(i).y - yTouch) < maxDistance) {
+                        focusIndex = i;
+                        Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
+                        selectDrawer = false;
+                        return true;
+                    }
+                }*/
+                } else if (selectEditJoint) {
+                    editJoint = match;
+                    if (editJoint == null) {
+                        return true;
+                    }
+                    Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_LONG).show();
                 }
-            }*/
-        } else if(selectEditJoint) {
-            editJoint = checkJointHit(xTouch, yTouch);
-            if(editJoint == null) {
-                return true;
-            }
-            Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_LONG).show();
-            selectEditJoint = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if(selectEditJoint || selectDriver) {
+                    break;
+                }
+                xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
+                yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
+                if(match == null) {
+                    Log.i(TAG, "Joint has not been filled.");
+                } else {
+                    match.setXCoord((double) xTouch);
+                    match.setYCoord((double) yTouch);
+                    drawFrame(mJoints);
+                    mJointViewModel.updateJoint(match);
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_POINTER_UP:
+            case MotionEvent.ACTION_CANCEL:
+                selectDriver = false;
+                selectEditJoint = false;
+                match = null;
+                break;
         }
         return super.onGenericMotionEvent(event);
     }
@@ -320,6 +347,7 @@ public class SimulatorActivity extends AppCompatActivity {
         origin = points.get(motorIndex);
         Joint motor = mJoints.get(motorIndex);
         Point motorPoint = convertCoordinates(new Point(motor.getXCoord(), motor.getYCoord()), origin);
+        Log.i(TAG, "motor point = (" + motorPoint.x + "," + motorPoint.y + ")");
 
         // Add distances between joints (radii for later calculations)
         for(Joint joint1: mJoints) {
@@ -365,8 +393,9 @@ public class SimulatorActivity extends AppCompatActivity {
                 for (Joint joint : driveLink1Joints) {
                     if (!complete.contains(joint)) {
                         Log.i(TAG, "original point = (" + joint.getXCoord() + "," + joint.getYCoord() + ")");
-                        Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
-                        double radius = getMagnitude(calcPoint, motorPoint);
+                        //Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
+                        //double radius = getMagnitude(calcPoint, motorPoint);
+                        double radius = radii.get(joint.getJointId() + "to" + motor.getJointId());
                         Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta1 + i), radius * Math.sin(theta1 + i)), origin);
                         joint.setXCoord(drawPoint.x);
                         joint.setYCoord(drawPoint.y);
@@ -565,9 +594,20 @@ public class SimulatorActivity extends AppCompatActivity {
     }
 
     private double getAngle(Point point1, Point point2) {
-        double theta = Math.atan((point2.y - point1.y) / (point2.x - point1.x));
-        if(theta < 0) {
-            return (Math.PI + theta);
+        double dx = point1.x - point2.x;
+        double dy = point1.y - point2.y;
+        if(dx == 0) {
+            if(dy > 0) {
+                return Math.PI / 2;
+            }
+            return 3 * Math.PI / 2;
+        }
+        double theta = Math.atan(dy / dx);
+        if(dx < 0) {
+            return Math.PI + theta;
+        }
+        if(dx > 0 && dy < 0) {
+            return 2 * Math.PI + theta;
         }
         return theta;
     }
