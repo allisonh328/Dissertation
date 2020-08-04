@@ -364,12 +364,15 @@ public class SimulatorActivity extends AppCompatActivity {
                 List<Joint> driveLink1Joints = getJointsOnLink(driveLink1ID);
                 for (Joint joint : driveLink1Joints) {
                     if (!complete.contains(joint)) {
+                        Log.i(TAG, "original point = (" + joint.getXCoord() + "," + joint.getYCoord() + ")");
                         Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
                         double radius = getMagnitude(calcPoint, motorPoint);
                         Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta1 + i), radius * Math.sin(theta1 + i)), origin);
                         joint.setXCoord(drawPoint.x);
                         joint.setYCoord(drawPoint.y);
+                        Log.i(TAG, "new point = (" + drawPoint.x + "," + drawPoint.y + ")");
                         complete.add(joint);
+                        Log.i(TAG, "adding " + joint.getJointName() + " to complete");
                     }
                 }
             }
@@ -383,6 +386,7 @@ public class SimulatorActivity extends AppCompatActivity {
                         joint.setXCoord(drawPoint.x);
                         joint.setYCoord(drawPoint.y);
                         complete.add(joint);
+                        Log.i(TAG, "adding " + joint.getJointName() + " to complete");
                     }
                 }
             }
@@ -501,7 +505,9 @@ public class SimulatorActivity extends AppCompatActivity {
 
             // Get radii from list
             double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
+            Log.i(TAG, "radius 1 = " + radius1);
             double radius2 = radii.get(joint2.getJointId() + "to" + joint1.getJointId());
+            Log.i(TAG, "radius 2 = " + radius2);
 
             // Lots of weird math to locate circle intersections
             double u = -1 * (fixed1.y - fixed2.y) / (fixed1.x - fixed2.x);
@@ -510,6 +516,7 @@ public class SimulatorActivity extends AppCompatActivity {
             double bQuad = 2 * u * v - 2 * fixed1.x * u - 2 * fixed1.y;
             double cQuad = sqr(v) - 2 * fixed1.x * v + sqr(fixed1.x) + sqr(fixed1.y) - sqr(radius1);
             double determinant = sqr(bQuad) - 4 * aQuad * cQuad;
+            Log.i(TAG, "determinant = " + determinant);
 
             // If determinant is less than zero, equations are unsolvable and there is no solution
             if (determinant < 0) {
@@ -558,7 +565,11 @@ public class SimulatorActivity extends AppCompatActivity {
     }
 
     private double getAngle(Point point1, Point point2) {
-        return Math.atan((point2.y - point1.y) / (point2.x - point1.x));
+        double theta = Math.atan((point2.y - point1.y) / (point2.x - point1.x));
+        if(theta < 0) {
+            return (Math.PI + theta);
+        }
+        return theta;
     }
 
     private Point convertCoordinates (Point point, Point origin) {

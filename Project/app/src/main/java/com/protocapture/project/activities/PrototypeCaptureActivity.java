@@ -497,17 +497,17 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         }
 
         float maxDistance = width/30;
-        float xTouch = 0;
-        float yTouch = 0;
-        int rotation = windowManager.getDefaultDisplay().getRotation();
+        float xTouch = (event.getX() / width) * mRgba.cols();
+        float yTouch = (event.getY() / height) * mRgba.rows();
+       /* int rotation = windowManager.getDefaultDisplay().getRotation();
         switch (rotation) {
             case Surface.ROTATION_0:
                 yTouch = ((width - event.getX()) / width) * mRgba.rows();
                 xTouch = (event.getY() / height) * mRgba.cols();
                 break;
             case Surface.ROTATION_90:
-                xTouch = (event.getX() / width) * mRgba.cols();
-                yTouch = (event.getY() / height) * mRgba.rows();
+                xTouch =
+                yTouch =
                 break;
             case Surface.ROTATION_180:
                 yTouch = ((width - event.getX()) / width) * mRgba.rows();
@@ -517,7 +517,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 xTouch = ((width - event.getX()) / width) * mRgba.cols();
                 yTouch = ((height - event.getY()) / height) * mRgba.rows();
                 break;
-        }
+        }*/
 
         Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
         int index = -1;
@@ -554,9 +554,11 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         } else if(createLinks) {
             for (Joint joint: mJoints) {
                 if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
-                    Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
-                    lines.add(joint);
-                    createButton.setText(R.string.add_button);
+                    if(!lines.contains(joint)) {
+                        Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
+                        lines.add(joint);
+                        createButton.setText(R.string.add_button);
+                    }
                 }
             }
 
