@@ -19,6 +19,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.protocapture.project.ComponentCollectionFragment;
+import com.protocapture.project.HelpFragment;
 import com.protocapture.project.R;
 import com.protocapture.project.database.JointListAdapter;
 import com.protocapture.project.database.LinkListAdapter;
@@ -98,6 +99,14 @@ public class ViewPrototypeActivity extends AppCompatActivity {
             Intent intent = new Intent(this, SimulatorActivity.class);
             intent.putExtra(EXTRA_MESSAGE, mPrototype.getPrototypeName());
             startActivityForResult(intent, SIMULATOR_ACTIVITY_REQUEST_CODE);
+        } else if (id == R.id.action_help) {
+            FragmentManager fm = getSupportFragmentManager();
+            HelpFragment fragment = new HelpFragment();
+            fragment.setStyle(HelpFragment.STYLE_NORMAL, R.style.CustomDialog);
+            Bundle args = new Bundle();
+            args.putString("key", "view");
+            fragment.setArguments(args);
+            fragment.show(fm, "fragment_help");
         }
 
         return super.onOptionsItemSelected(item);

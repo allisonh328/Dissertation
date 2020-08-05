@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements PrototypeListAdap
                 startActivityForResult(intent, NEW_PROTOTYPE_ACTIVITY_REQUEST_CODE);
             }
         });
+        Toast.makeText(this, "Welcome!\nClick '+' to add a mechanism!", Toast.LENGTH_LONG).show();
     }
 
     //https://www.freecodecamp.org/news/how-to-build-an-augmented-reality-android-app-with-arcore-and-android-studio-43e4676cb36f/

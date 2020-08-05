@@ -6,6 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -36,6 +39,9 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.protocapture.project.HelpFragment;
+import com.protocapture.project.JointFragment;
+import com.protocapture.project.LinkFragment;
 import com.protocapture.project.R;
 import com.protocapture.project.database.Joint;
 import com.protocapture.project.database.JointViewModel;
@@ -306,6 +312,14 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     createButton.setVisibility(View.GONE);
                 }
             });
+        } else if (id == R.id.action_help) {
+            FragmentManager fm = getSupportFragmentManager();
+            HelpFragment fragment = new HelpFragment();
+            fragment.setStyle(HelpFragment.STYLE_NORMAL, R.style.CustomDialog);
+            Bundle args = new Bundle();
+            args.putString("key", "capture");
+            fragment.setArguments(args);
+            fragment.show(fm, "fragment_help");
         }
 
         return super.onOptionsItemSelected(item);

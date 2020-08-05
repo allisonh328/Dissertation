@@ -5,6 +5,8 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.MotionEventCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -26,6 +28,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.protocapture.project.ComponentCollectionFragment;
+import com.protocapture.project.HelpFragment;
 import com.protocapture.project.R;
 import com.protocapture.project.SimulatorView;
 import com.protocapture.project.database.Joint;
@@ -250,6 +253,14 @@ public class SimulatorActivity extends AppCompatActivity {
 
                 }
             });
+        } else if (id == R.id.action_help) {
+            FragmentManager fm = getSupportFragmentManager();
+            HelpFragment fragment = new HelpFragment();
+            fragment.setStyle(HelpFragment.STYLE_NORMAL, R.style.CustomDialog);
+            Bundle args = new Bundle();
+            args.putString("key", "simulate");
+            fragment.setArguments(args);
+            fragment.show(fm, "fragment_help");
         }
         return super.onOptionsItemSelected(item);
     }

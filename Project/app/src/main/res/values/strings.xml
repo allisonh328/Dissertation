@@ -16,6 +16,7 @@
     <string name="add_button">Add</string>
     <string name="cancel_button">Cancel</string>
     <string name="fix_button">Set as Fixed</string>
+    <string name="button_close">Close</string>
 
     <!-- Actions -->
     <string name="action_add_joints">Add Joints</string>
@@ -24,7 +25,7 @@
     <string name="action_run_sim">Run Simulation</string>
     <string name="action_help">Help</string>
     <string name="action_edit_joint">Edit Joint</string>
-    <string name="action_view_prototype">View Prototype</string>
+    <string name="action_view_prototype">View Mechanism</string>
     <string name="action_fix_joints">Constrain Joints</string>
 
     <!-- Labels -->
@@ -32,7 +33,24 @@
     <string name="x_label">**X Coordinate:</string>
     <string name="y_label">**Y Coordinate:</string>
     <string name="constraint_label">Constraint:</string>
+    <string name="help_label">Pro Tips:</string>
 
-    <string name="note">**Coordinates are with respect to left-most joint.</string>
+    <!-- Help Text -->
+    <string name="capture_help_text">* Make sure when you tap the screen to pause a frame that every joint you want to select is highlighted with a green circle. Additional circles may be ignored, but you cannot create a joint where a feature has not been highlighted.\n
+        * If your joints are not being detected, try darkening them or making them larger. Also try adjusting the lighting.\n
+        * If too many features are being detected, try panning out or redrawing your mechanism with lighter lines.\n
+        * If you capture a mechanism too zoomed in, it may be difficult to view the simulation later. However, if you are too far out, it may be difficult to add links properly if joints are too close together.\n
+        * Select "Add joints" to add joints to your mechanism. Clicking "Add" makes them permanent. Clicking "Cancel" removes any joints you have just added. Joints can be deleted later.\n
+        * Select "Add links" to combine joints into links. Clicking "Add" makes a single link permanent. Clicking "Done" saves the entire mechanism and takes you to the "View Mechanism" page. Clicking "Cancel" removes any linkss you have just added. Links can be deleted later.\n
+        * When adding links, first select the two endpoints, then any other joints that fall on the link.\n
+        * Joints can only support two links, so if there is a place where multiple links come together, you may have to add two close joints at that location and have a different link attaching to each joint.</string>
+
+    <string name="simulate_help_text">* Drag a joint to adjust its location and its associated links. It can be slow, so make sure it has caught up before removing your finger. The new location is permanent and will be remembered even if you navigate away from the page.\n
+        * Select "Edit Joint" to view the Edit Joint page. You will be able to manually edit a joint\'s location and constraints, as well as its name.\n
+        * Select "Constrain Joints" to set the constraint to "fixed" for any joints that you select. You will need to fix joints to fully constrain the mechanism for the simulator to work properly, and the motor joint must be fixed.\n
+        * Select "View simulation" to see your mechanism in action! You will be prompted to select a motor joint, which is where the action will be initiated. This is always assumed to be a crank \(circular\) input, and must be a fixed joint.</string>
+
+    <string name="view_help_text">* Select on any link or joint to view and edit its properties. Select "delete" for any link or joint to remove it from the mechanism. Note that deleting a joint will also remove any associated links.\n
+        * Select "View Mechanism" to view an image of your captured mechanism, interactively edit it, or see a simulation of your mechanism in action.</string>
 
 </resources>
