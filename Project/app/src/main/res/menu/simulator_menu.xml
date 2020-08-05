@@ -10,6 +10,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_fix_joints"
+        android:title="@string/action_fix_joints"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_view_sim"
         android:title="@string/action_run_sim"
         app:showAsAction="never" />

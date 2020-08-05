@@ -58,10 +58,12 @@ public class SimulatorActivity extends AppCompatActivity {
     private PrototypeViewModel mPrototypeViewModel;
     private LinkViewModel mLinkViewModel;
     private JointViewModel mJointViewModel;
+    private Button okButton;
+
     private Prototype mPrototype;
     private List<Link> mLinks;
     private List<Joint> mJoints;
-    private Button okButton;
+    private List<Joint> fixJoints = new ArrayList<>();
     private Joint editJoint = null;
     private Point origin;
     private ArrayList<Joint> complete = new ArrayList<>();
@@ -77,6 +79,7 @@ public class SimulatorActivity extends AppCompatActivity {
 
     private boolean selectDriver = false;
     private boolean selectEditJoint = false;
+    private boolean selectFixJoints = false;
     private Integer motorIndex = -1;
     private boolean kill = false;
 
@@ -134,7 +137,7 @@ public class SimulatorActivity extends AppCompatActivity {
                     Log.i(TAG, filename);
 
                     FileInputStream input = new FileInputStream(new File(filename));
-                    if(input.available() != 0) {
+                    if (input.available() != 0) {
                         bitmap = BitmapFactory.decodeStream(input);
                     }
                     input.close();
@@ -184,14 +187,16 @@ public class SimulatorActivity extends AppCompatActivity {
         if (id == R.id.action_edit_joint) {
             //selectDrawer = false;
             selectDriver = false;
+            selectEditJoint = false;
             selectEditJoint = true;
             Toast.makeText(SimulatorActivity.this, "Select joint to edit.", Toast.LENGTH_SHORT).show();
-            okButton.setText("Edit");
+            okButton.setText(R.string.edit_button);
             okButton.setVisibility(View.VISIBLE);
+
             okButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(editJoint == null) {
+                    if (editJoint == null) {
                         Toast.makeText(SimulatorActivity.this, "Please select a joint to edit.", Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -204,18 +209,45 @@ public class SimulatorActivity extends AppCompatActivity {
         } else if (id == R.id.action_view_sim) {
             //selectDrawer = false;
             selectEditJoint = false;
+            selectFixJoints = false;
             selectDriver = true;
             Toast.makeText(SimulatorActivity.this, "Select motor location.", Toast.LENGTH_LONG).show();
-            okButton.setText("Animate");
+            okButton.setText(R.string.button_animate);
             okButton.setVisibility(View.VISIBLE);
+
             okButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(motorIndex == -1) {
+                    if (motorIndex == -1) {
                         Toast.makeText(SimulatorActivity.this, "Please select motor location.", Toast.LENGTH_LONG).show();
                         return;
                     }
                     animateMechanism(mSimulatorView);
+                }
+            });
+
+        } else if (id == R.id.action_fix_joints) {
+            selectEditJoint = false;
+            selectDriver = false;
+            selectFixJoints = true;
+            Toast.makeText(SimulatorActivity.this, "Select joints to set as fixed.", Toast.LENGTH_LONG).show();
+            okButton.setText(R.string.fix_button);
+            okButton.setVisibility(View.VISIBLE);
+
+            okButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (fixJoints.isEmpty()) {
+                        Toast.makeText(SimulatorActivity.this, "Please select joints to constrain.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    for(Joint joint: fixJoints) {
+                        joint.setConstraint(Joint.FIXED);
+                    }
+                    mJointViewModel.updateJoints(fixJoints);
+                    selectFixJoints = false;
+                    Toast.makeText(SimulatorActivity.this, "Joints constrained!", Toast.LENGTH_LONG).show();
+
                 }
             });
         }
@@ -230,55 +262,42 @@ public class SimulatorActivity extends AppCompatActivity {
         float xTouch = -1;
         float yTouch = -1;
 
-        switch(event.getAction()) {
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
                 getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
                 xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
                 yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
                 match = checkJointHit(xTouch, yTouch);
+                if(match == null) {
+                    return true;
+                }
 
                 //int maxDistance = displayMetrics.widthPixels/30;
                 if (selectDriver) {
                     Log.i(TAG, "Waiting for motor selection...");
                     Log.i(TAG, "x = " + xTouch + ", y = " + yTouch);
-                    if (match == null) {
-                        return true;
-                    } else if (match.getConstraint() != Joint.FIXED) {
+                    if (match.getConstraint() != Joint.FIXED) {
                         Toast.makeText(this, "The motor location must be a fixed joint.", Toast.LENGTH_LONG).show();
                     } else {
-                        //fillPoints(driver);
                         motorIndex = mJoints.indexOf(match);
-                        Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
-                        //selectEditJoint = false;
-                        //selectDrawer = true;
-                        //Toast.makeText(this, "Select the focus point.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Ready to animate!", Toast.LENGTH_SHORT).show();
                     }
-            /*} else if(selectDrawer) {
-                for (int i = 0; i < points.size(); i++) {
-                    Log.i(TAG, "SelectDrawer: Touch at (" + xTouch + "," + yTouch + ")");
-                    if (Math.abs(points.get(i).x - xTouch) < maxDistance && Math.abs(points.get(i).y - yTouch) < maxDistance) {
-                        focusIndex = i;
-                        Toast.makeText(this, "Ready to animate!", Toast.LENGTH_LONG).show();
-                        selectDrawer = false;
-                        return true;
-                    }
-                }*/
                 } else if (selectEditJoint) {
                     editJoint = match;
-                    if (editJoint == null) {
-                        return true;
-                    }
-                    Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_SHORT).show();
+                } else if (selectFixJoints) {
+                    fixJoints.add(match);
+                    Toast.makeText(this, "Joint " + match.getJointName() + " selected.", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
-                if(selectEditJoint || selectDriver) {
+                if (selectEditJoint || selectDriver || selectFixJoints) {
                     break;
                 }
                 xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
                 yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
-                if(match == null) {
+                if (match == null) {
                     Log.i(TAG, "Joint has not been filled.");
                 } else {
                     match.setXCoord((double) xTouch);
@@ -314,10 +333,10 @@ public class SimulatorActivity extends AppCompatActivity {
         Canvas drawable = new Canvas(drawableBitmap);
 
         // Draw links
-        for(Link link: mLinks) {
+        for (Link link : mLinks) {
             Joint joint1 = getJointbyId(link.getEndpoint1());
             Joint joint2 = getJointbyId(link.getEndpoint2());
-            if(joint1 != null && joint2 != null) {
+            if (joint1 != null && joint2 != null) {
                 Point endpoint1 = new Point(joint1.getXCoord(), joint1.getYCoord());
                 Point endpoint2 = new Point(joint2.getXCoord(), joint2.getYCoord());
 
@@ -326,7 +345,7 @@ public class SimulatorActivity extends AppCompatActivity {
         }
 
         // Draw joints & motion profiles
-        for(Joint joint: drawingPoints) {
+        for (Joint joint : drawingPoints) {
             //Log.i(TAG, "Point at: (" + point.x + "," + point.y + ")");
             double x = joint.getXCoord();
             double y = joint.getYCoord();
@@ -348,8 +367,8 @@ public class SimulatorActivity extends AppCompatActivity {
         Log.i(TAG, "motor point = (" + motorPoint.x + "," + motorPoint.y + ")");
 
         // Add distances between joints (radii for later calculations)
-        for(Joint joint1: mJoints) {
-            for(Joint joint2: mJoints) {
+        for (Joint joint1 : mJoints) {
+            for (Joint joint2 : mJoints) {
                 String name = joint1.getJointId() + "to" + joint2.getJointId();
                 Point point1 = new Point(joint1.getXCoord(), joint1.getYCoord());
                 Point point2 = new Point(joint2.getXCoord(), joint2.getYCoord());
@@ -361,61 +380,61 @@ public class SimulatorActivity extends AppCompatActivity {
         double theta1 = 0;
         double theta2 = 0;
         Integer driveLink1ID = motor.getLink1ID();
-        if(driveLink1ID != null) {
+        if (driveLink1ID != null) {
             Point endpoint1 = getOtherEndpoint(driveLink1ID, motor.getJointId());
             theta1 = getAngle(endpoint1, motorPoint);
             Log.i(TAG, "Theta1 = " + theta1);
         }
         Integer driveLink2ID = motor.getLink2ID();
-        if(driveLink2ID != null) {
+        if (driveLink2ID != null) {
             Point endpoint2 = getOtherEndpoint(driveLink2ID, motor.getJointId());
             theta2 = getAngle(endpoint2, motorPoint);
             Log.i(TAG, "Theta2 = " + theta2);
         }
 
         // Add all FIXED joints to the "complete" list (their position is fixed)
-        for(double i = 0; i <= 2 * Math.PI; i = i + 0.02) {
-            for(Joint joint: mJoints) {
-                if(joint.getConstraint() == Joint.FIXED) {
+        for (double i = 0; i <= 2 * Math.PI; i = i + 0.02) {
+            for (Joint joint : mJoints) {
+                if (joint.getConstraint() == Joint.FIXED) {
                     complete.add(joint);
                     Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
                 }
             }
 
             // Simulate links driven directly by motor
-            if(driveLink1ID != null) {
+            if (driveLink1ID != null) {
                 calculateDriveLink(driveLink1ID, theta1 + i);
             }
-            if(driveLink2ID != null) {
+            if (driveLink2ID != null) {
                 calculateDriveLink(driveLink2ID, theta2 + i);
             }
 
             // Iterate to finish simulation
             iterate(1);
-            if(kill) {
+            if (kill) {
                 Log.i(TAG, "Entered kill loop");
                 kill = false;
 
-                for(double j = i - 0.02; j >= i - 2 * Math.PI; j = j - 0.02) {
+                for (double j = i - 0.02; j >= i - 2 * Math.PI; j = j - 0.02) {
                     complete.clear();
-                    for(Joint joint: mJoints) {
-                        if(joint.getConstraint() == Joint.FIXED) {
+                    for (Joint joint : mJoints) {
+                        if (joint.getConstraint() == Joint.FIXED) {
                             complete.add(joint);
                             Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
                         }
                     }
 
                     // Simulate links driven directly by motor
-                    if(driveLink1ID != null) {
+                    if (driveLink1ID != null) {
                         calculateDriveLink(driveLink1ID, theta1 + j);
                     }
-                    if(driveLink2ID != null) {
+                    if (driveLink2ID != null) {
                         calculateDriveLink(driveLink2ID, theta2 + j);
                     }
 
                     // Iterate to finish simulation
                     iterate(1);
-                    if(kill) {
+                    if (kill) {
                         Log.i(TAG, "Double kill");
                         return;
                     }
@@ -458,29 +477,29 @@ public class SimulatorActivity extends AppCompatActivity {
 
         // Check the first link for a new point to calculate
         Integer link1id = next.getLink1ID();
-        if(link1id != null) {
+        if (link1id != null) {
             Log.i(TAG, "Trying link 1 of joint " + next.getJointName());
             simulate(next, link1id);
         }
-        if(kill) {
+        if (kill) {
             Log.i(TAG, "iterate method: I am dead!");
             return;
         }
 
         // Check the second link for a new point to calculate
         Integer link2id = next.getLink2ID();
-        if(link2id != null) {
+        if (link2id != null) {
             Log.i(TAG, "Trying link 2 of joint " + next.getJointName());
             simulate(next, link2id);
         }
-        if(kill) {
+        if (kill) {
             Log.i(TAG, "iterate method: I am dead!");
             return;
         }
 
         // Repeat with next joint
         index++;
-        if(index < complete.size()) {
+        if (index < complete.size()) {
             iterate(index);
         }
     }
@@ -489,31 +508,31 @@ public class SimulatorActivity extends AppCompatActivity {
 
         // Get all the joints on the selected link
         List<Joint> link1Joints = getJointsOnLink(linkid);
-        if(link1Joints.isEmpty()) {
+        if (link1Joints.isEmpty()) {
             return;
         }
 
         // Look for any joints that are still "free" (location not calculated yet)
-        for(Joint joint1: link1Joints) {
-            if(!complete.contains(joint1))  {
+        for (Joint joint1 : link1Joints) {
+            if (!complete.contains(joint1)) {
 
                 // Once a free joint has been located...
                 Log.i(TAG, "Found free joint " + joint1.getJointName());
 
                 // Check its first link for another fixed point (location already calculated)
                 Integer link1id = joint1.getLink1ID();
-                if(link1id != null) {
+                if (link1id != null) {
                     Log.i(TAG, "Trying link 1 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link1id);
                 }
-                if(kill) {
+                if (kill) {
                     Log.i(TAG, "simulate method: I am dead!");
                     return;
                 }
 
                 // Check its second link for another fixed point (Location already calculated)
                 Integer link2id = joint1.getLink2ID();
-                if(link2id != null) {
+                if (link2id != null) {
                     Log.i(TAG, "Trying link2 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link2id);
                 }
@@ -523,23 +542,23 @@ public class SimulatorActivity extends AppCompatActivity {
 
     private void completeSimulation(Joint joint0, Joint joint1, int linkid) {
         // If the location of this joint has already been calculated, return (could happen on second link)
-        if(complete.contains(joint1)) {
+        if (complete.contains(joint1)) {
             return;
         }
 
         // Look for second fixed point on link
         Joint joint2 = null;
         List<Joint> link2Joints = getJointsOnLink(linkid);
-        if(link2Joints.isEmpty()) {
+        if (link2Joints.isEmpty()) {
             return;
         }
-        for(Joint joint: link2Joints) {
+        for (Joint joint : link2Joints) {
             if (complete.contains(joint) && !joint.equals(joint0)) {
                 joint2 = joint;
                 Log.i(TAG, "Found second fixed joint: " + joint2.getJointName());
             }
         }
-        if(joint2 == null) {
+        if (joint2 == null) {
             return;
         }
 
@@ -597,7 +616,7 @@ public class SimulatorActivity extends AppCompatActivity {
                 joint1.setXCoord(newPoint.x);
                 joint1.setYCoord(newPoint.y);
             }
-        } catch(NullPointerException npe) {
+        } catch (NullPointerException npe) {
             Log.i(TAG, "no radius saved");
         }
 
@@ -617,35 +636,35 @@ public class SimulatorActivity extends AppCompatActivity {
     private double getAngle(Point point1, Point point2) {
         double dx = point1.x - point2.x;
         double dy = point1.y - point2.y;
-        if(dx == 0) {
-            if(dy > 0) {
+        if (dx == 0) {
+            if (dy > 0) {
                 return Math.PI / 2;
             }
             return 3 * Math.PI / 2;
         }
         double theta = Math.atan(dy / dx);
-        if(dx < 0) {
+        if (dx < 0) {
             return Math.PI + theta;
         }
-        if(dx > 0 && dy < 0) {
+        if (dx > 0 && dy < 0) {
             return 2 * Math.PI + theta;
         }
         return theta;
     }
 
-    private Point convertCoordinates (Point point, Point origin) {
+    private Point convertCoordinates(Point point, Point origin) {
         int yMax = background.getHeight();
         return new Point(point.x - origin.x, yMax - point.y - (yMax - origin.y));
     }
 
-    private Point reconvertCoordinates (Point point, Point origin) {
+    private Point reconvertCoordinates(Point point, Point origin) {
         int yMax = background.getHeight();
         return new Point(point.x + origin.x, yMax - (point.y + (yMax - origin.y)));
     }
 
     private Joint getJointbyId(int id) {
-        for(Joint joint: mJoints) {
-            if(joint.getJointId() == id) {
+        for (Joint joint : mJoints) {
+            if (joint.getJointId() == id) {
                 return joint;
             }
         }
@@ -653,8 +672,8 @@ public class SimulatorActivity extends AppCompatActivity {
     }
 
     private Link getLinkById(int id) {
-        for(Link link: mLinks) {
-            if(link.getLinkId() == id) {
+        for (Link link : mLinks) {
+            if (link.getLinkId() == id) {
                 return link;
             }
         }
@@ -664,12 +683,12 @@ public class SimulatorActivity extends AppCompatActivity {
 
     private List<Joint> getJointsOnLink(Integer linkID) {
         List<Joint> linkJoints = new ArrayList<>();
-        for(Joint joint: mJoints) {
-            if(joint.getLink1ID() != null && joint.getLink1ID().equals(linkID)) {
+        for (Joint joint : mJoints) {
+            if (joint.getLink1ID() != null && joint.getLink1ID().equals(linkID)) {
                 linkJoints.add(joint);
                 Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
-            if(joint.getLink2ID() != null && joint.getLink2ID().equals(linkID)) {
+            if (joint.getLink2ID() != null && joint.getLink2ID().equals(linkID)) {
                 linkJoints.add(joint);
                 Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
@@ -680,10 +699,10 @@ public class SimulatorActivity extends AppCompatActivity {
 
 
     private Joint checkJointHit(float xTouch, float yTouch) {
-        int maxDistance = displayMetrics.widthPixels/30;
-        for(Joint joint: mJoints) {
+        int maxDistance = displayMetrics.widthPixels / 30;
+        for (Joint joint : mJoints) {
             Log.i(TAG, "SelectEditJoint: Touch at (" + xTouch + "," + yTouch + ")");
-            if (Math.abs(joint.getXCoord()- xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
+            if (Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
                 return joint;
             }
         }
@@ -708,105 +727,4 @@ public class SimulatorActivity extends AppCompatActivity {
         }
         return endpoint;
     }
-
-   /* private Link checkLinkHit(float xTouch, float yTouch) {
-        Log.i(TAG, "Looking for a match...");
-        for(Link link: mLinks) {
-            Integer joint1_id = link.getEndpoint1();
-            Integer joint2_id = link.getEndpoint2();
-            Joint point1 = getJointbyId(joint1_id);
-            Joint point2 = getJointbyId(joint2_id);
-
-            if(point1 == null || point2 == null) {
-                return null;
-            }
-
-            // https://stackoverflow.com/questions/24335866/how-to-create-clickable-lines-in-android
-            int maxDistance = 4000;
-            double distFromLink = (point2.getXCoord() - point1.getXCoord()) * (yTouch - point1.getYCoord()) -
-                    (point2.getYCoord() - point1.getYCoord()) * (xTouch - point1.getXCoord());
-            Log.i(TAG, "distance(ish) = " + distFromLink);
-            if (distFromLink < maxDistance && distFromLink > -1 * maxDistance) {
-                Log.i(TAG, "FOUND MATCH!");
-                return link;
-            }
-        }
-        return null;
-    }
-
-
-
-    private void fillPoints(Link driver) {
-
-        Log.i(TAG, "driver id = " + driver.getLinkId());
-        if(points.size() == mJoints.size()) {
-            Log.i(TAG, "Exiting.");
-            return;
-        }
-
-        int joint1_id = driver.getEndpoint1();
-        int joint2_id = driver.getEndpoint2();
-        Joint point1 = getJointbyId(joint1_id);
-        Joint point2 = getJointbyId(joint2_id);
-
-        if(points.isEmpty()) {
-            Log.i(TAG, "setting first point");
-            if (point1.getConstraint() == Joint.FIXED) {
-                // if(point2.getConstraint() == Joint.FIXED) {
-                // Toast.makeText(this, "Please choose a non-static link as the driver.", Toast.LENGTH_LONG).show();
-                // }
-                points.add(new Point(point1.getXCoord(), point1.getYCoord()));
-                Log.i(TAG, "1a: There is " + points.size() + " points");
-            } else if(point2.getConstraint() == Joint.FIXED) {
-                points.add(new Point(point2.getXCoord(), point2.getYCoord()));
-                Log.i(TAG, "1b: There is " + points.size() + " points");
-            } else {
-                Toast.makeText(this, "The driving link should have at least 1 fixed joint.", Toast.LENGTH_LONG).show();
-                return;
-            }
-        }
-
-        Link nextLink;
-        if(point1.getXCoord() == points.get(points.size() - 1).x && point1.getYCoord() == points.get(points.size() - 1).y) {
-            points.add(new Point(point2.getXCoord(), point2.getYCoord()));
-            Log.i(TAG, "2a: There are " + points.size() + " points");
-            Log.i(TAG, "Link1 id = " + point2.getLink1ID());
-            Log.i(TAG, "Link2 id = " + point2.getLink2ID());
-            if(point2.getLink1ID().equals(driver.getLinkId())) {
-                Log.i(TAG, "FLAG D");
-                int nextLinkId = point2.getLink2ID();
-                nextLink = getLinkById(nextLinkId);
-                fillPoints(nextLink);
-            } else if(point2.getLink2ID().equals(driver.getLinkId())) {
-                Log.i(TAG, "FLAG E");
-                int nextLinkId = point2.getLink1ID();
-                nextLink = getLinkById(nextLinkId);
-                fillPoints(nextLink);
-            } else {
-                Log.i(TAG, "FLAG F");
-                return;
-            }
-        } else if(point2.getXCoord() == points.get(points.size() - 1).x && point2.getYCoord() == points.get(points.size() - 1).y) {
-            points.add(new Point(point1.getXCoord(), point1.getYCoord()));
-            Log.i(TAG, "2b: There are " + points.size() + " points");
-            Log.i(TAG, "Link1 id = " + point1.getLink1ID());
-            Log.i(TAG, "Link2 id = " + point1.getLink2ID());
-            if(point1.getLink1ID().equals(driver.getLinkId())) {
-                Log.i(TAG, "FLAG H");
-                int nextLinkId = point1.getLink2ID();
-                nextLink = getLinkById(nextLinkId);
-                fillPoints(nextLink);
-            } else if(point1.getLink2ID().equals(driver.getLinkId())) {
-                Log.i(TAG, "FLAG I");
-                int nextLinkId = point1.getLink1ID();
-                nextLink = getLinkById(nextLinkId);
-                fillPoints(nextLink);
-            } else {
-                Log.i(TAG, "FLAG J");
-                return;
-            }
-        }
-    }*/
-
-
 }

@@ -15,6 +15,7 @@
     <string name="done_button">Done</string>
     <string name="add_button">Add</string>
     <string name="cancel_button">Cancel</string>
+    <string name="fix_button">Set as Fixed</string>
 
     <!-- Actions -->
     <string name="action_add_joints">Add Joints</string>
@@ -24,6 +25,7 @@
     <string name="action_help">Help</string>
     <string name="action_edit_joint">Edit Joint</string>
     <string name="action_view_prototype">View Prototype</string>
+    <string name="action_fix_joints">Constrain Joints</string>
 
     <!-- Labels -->
     <string name="name_label">Name:</string>
