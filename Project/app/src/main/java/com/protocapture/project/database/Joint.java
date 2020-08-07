@@ -53,6 +53,12 @@ public class Joint {
     @ColumnInfo(name="link2_parent_id")
     private Integer link2ID;
 
+    @ColumnInfo(name="link3_parent_id")
+    private Integer link3ID;
+
+    @ColumnInfo(name="link4_parent_id")
+    private Integer link4ID;
+
     @NonNull
     @ColumnInfo(name="proto_parent_id")
     private Integer prototypeID;
@@ -76,6 +82,10 @@ public class Joint {
 
     public void setLink2ID(Integer parentID) { link2ID = parentID; }
 
+    public void setLink3ID(Integer parentID) { link3ID = parentID; }
+
+    public void setLink4ID(Integer parentID) { link4ID = parentID; }
+
     public void setPrototypeID(Integer prototypeID) { this.prototypeID = prototypeID; }
 
     public void setConstraint(Integer constraint) { this.constraint = constraint; }
@@ -91,6 +101,10 @@ public class Joint {
     public Integer getLink1ID() { return link1ID; }
 
     public Integer getLink2ID() { return link2ID; }
+
+    public Integer getLink3ID() { return link3ID; }
+
+    public Integer getLink4ID() { return link4ID; }
 
     public Integer getPrototypeID() { return prototypeID; }
 

@@ -404,7 +404,7 @@ public class SimulatorActivity extends AppCompatActivity {
         }
 
         // Add all FIXED joints to the "complete" list (their position is fixed)
-        for (double i = 0; i <= 2 * Math.PI; i = i + 0.02) {
+        for (double i = 0; i < 2 * Math.PI; i = i + 0.03) {
             for (Joint joint : mJoints) {
                 if (joint.getConstraint() == Joint.FIXED) {
                     complete.add(joint);
@@ -426,7 +426,7 @@ public class SimulatorActivity extends AppCompatActivity {
                 Log.i(TAG, "Entered kill loop");
                 kill = false;
 
-                for (double j = i - 0.02; j >= i - 2 * Math.PI; j = j - 0.02) {
+                for (double j = i - 0.03; j > i - 2 * Math.PI; j = j - 0.03) {
                     complete.clear();
                     for (Joint joint : mJoints) {
                         if (joint.getConstraint() == Joint.FIXED) {
@@ -508,6 +508,26 @@ public class SimulatorActivity extends AppCompatActivity {
             return;
         }
 
+        Integer link3id = next.getLink3ID();
+        if (link3id != null) {
+            Log.i(TAG, "Trying link 3 of joint " + next.getJointName());
+            simulate(next, link3id);
+        }
+        if (kill) {
+            Log.i(TAG, "iterate method: I am dead!");
+            return;
+        }
+
+        Integer link4id = next.getLink4ID();
+        if (link4id != null) {
+            Log.i(TAG, "Trying link 4 of joint " + next.getJointName());
+            simulate(next, link4id);
+        }
+        if (kill) {
+            Log.i(TAG, "iterate method: I am dead!");
+            return;
+        }
+
         // Repeat with next joint
         index++;
         if (index < complete.size()) {
@@ -546,6 +566,28 @@ public class SimulatorActivity extends AppCompatActivity {
                 if (link2id != null) {
                     Log.i(TAG, "Trying link2 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link2id);
+                }
+                if (kill) {
+                    Log.i(TAG, "simulate method: I am dead!");
+                    return;
+                }
+
+                // Check its third link for another fixed point (location already calculated)
+                Integer link3id = joint1.getLink3ID();
+                if (link3id != null) {
+                    Log.i(TAG, "Trying link 3 of joint " + joint1.getJointName());
+                    completeSimulation(joint0, joint1, link3id);
+                }
+                if (kill) {
+                    Log.i(TAG, "simulate method: I am dead!");
+                    return;
+                }
+
+                // Check its first link for another fixed point (location already calculated)
+                Integer link4id = joint1.getLink4ID();
+                if (link4id != null) {
+                    Log.i(TAG, "Trying link 4 of joint " + joint1.getJointName());
+                    completeSimulation(joint0, joint1, link4id);
                 }
             }
         }

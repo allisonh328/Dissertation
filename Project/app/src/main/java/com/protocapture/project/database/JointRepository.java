@@ -33,6 +33,10 @@ public class JointRepository {
 
     LiveData<Link> getParentLink2(int jointID) { return mJointDao.getParentLink2(jointID); }
 
+    LiveData<Link> getParentLink3(int jointID) { return mJointDao.getParentLink3(jointID); }
+
+    LiveData<Link> getParentLink4(int jointID) { return mJointDao.getParentLink4(jointID); }
+
     //LiveData<PointTuple> getCoordinates(int jointID) { return mJointDao.getCoordinates(jointID); }
 
     void insert(Joint joint) {
@@ -74,6 +78,18 @@ public class JointRepository {
     void setLink2Id(int linkID, int jointID) {
         PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
             mJointDao.setLink2Id(linkID, jointID);
+        });
+    }
+
+    void setLink3Id(int linkID, int jointID) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mJointDao.setLink3Id(linkID, jointID);
+        });
+    }
+
+    void setLink4Id(int linkID, int jointID) {
+        PrototypeRoomDatabase.databaseWriteExecutor.execute(() -> {
+            mJointDao.setLink4Id(linkID, jointID);
         });
     }
 }

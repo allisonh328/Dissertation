@@ -441,9 +441,19 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         if(joint.getLink1ID() == null) {
             Log.i(TAG, "Adding to link1");
             joint.setLink1ID(linkID);
-        } else if (!joint.getLink1ID().equals(linkID) && joint.getLink2ID() == null) {
-            Log.i(TAG, "Adding to link2");
-            joint.setLink2ID(linkID);
+        } else if (!joint.getLink1ID().equals(linkID)) {
+            if(joint.getLink2ID() == null) {
+                Log.i(TAG, "Adding to link2");
+                joint.setLink2ID(linkID);
+            } else if (!joint.getLink2ID().equals(linkID)) {
+                if (joint.getLink3ID() == null) {
+                    Log.i(TAG, "Adding to link3");
+                    joint.setLink3ID(linkID);
+                } else if (!joint.getLink3ID().equals(linkID) && joint.getLink4ID() == null) {
+                    Log.i(TAG, "Adding to link4");
+                    joint.setLink4ID(linkID);
+                }
+            }
         }
     }
 

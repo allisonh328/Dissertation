@@ -54,11 +54,27 @@ public interface JointDao {
             " WHERE joint_id = :jointID")
     LiveData<Link> getParentLink2(int jointID);
 
+    @Query("SELECT * FROM link_table " +
+            " JOIN joint_table ON link_id = link3_parent_id " +
+            " WHERE joint_id = :jointID")
+    LiveData<Link> getParentLink3(int jointID);
+
+    @Query("SELECT * FROM link_table " +
+            " JOIN joint_table ON link_id = link4_parent_id " +
+            " WHERE joint_id = :jointID")
+    LiveData<Link> getParentLink4(int jointID);
+
     @Query("UPDATE joint_table SET link1_parent_id = :linkID WHERE joint_id = :jointID")
     void setLink1Id(int linkID, int jointID);
 
     @Query("UPDATE joint_table SET link2_parent_id = :linkID WHERE joint_id = :jointID")
     void setLink2Id(int linkID, int jointID);
+
+    @Query("UPDATE joint_table SET link3_parent_id = :linkID WHERE joint_id = :jointID")
+    void setLink3Id(int linkID, int jointID);
+
+    @Query("UPDATE joint_table SET link4_parent_id = :linkID WHERE joint_id = :jointID")
+    void setLink4Id(int linkID, int jointID);
 
    // @Query("SELECT joint_x, joint_y FROM joint_table WHERE joint_id = :jointID")
    // LiveData<PointTuple> getCoordinates(int jointID);

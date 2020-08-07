@@ -38,6 +38,10 @@ public class JointViewModel extends AndroidViewModel {
 
     public LiveData<Link> getParentLink2(int jointID) {return mRepository.getParentLink2(jointID); }
 
+    public LiveData<Link> getParentLink3(int jointID) {return mRepository.getParentLink3(jointID); }
+
+    public LiveData<Link> getParentLink4(int jointID) {return mRepository.getParentLink4(jointID); }
+
     //public LiveData<PointTuple> getCoordinates(int jointID) { return mRepository.getCoordinates(jointID); }
 
     public void insert(Joint joint) { mRepository.insert(joint); }
@@ -53,4 +57,8 @@ public class JointViewModel extends AndroidViewModel {
     public void setLink1Id(int linkID, int jointID) { mRepository.setLink1Id(linkID, jointID); }
 
     public void setLink2Id(int linkID, int jointID) { mRepository.setLink2Id(linkID, jointID); }
+
+    public void setLink3Id(int linkID, int jointID) { mRepository.setLink3Id(linkID, jointID); }
+
+    public void setLink4Id(int linkID, int jointID) { mRepository.setLink4Id(linkID, jointID); }
 }
