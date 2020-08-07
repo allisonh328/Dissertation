@@ -19,6 +19,11 @@
         android:title="@string/action_run_sim"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_reset"
+        android:title="@string/action_reset"
+        app:showAsAction="never" />
+
     <!-- Settings, should always be in the overflow -->
     <item android:id="@+id/action_help"
         android:title="@string/action_help"

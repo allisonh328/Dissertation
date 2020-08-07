@@ -27,6 +27,7 @@
     <string name="action_edit_joint">Edit Joint</string>
     <string name="action_view_prototype">View Mechanism</string>
     <string name="action_fix_joints">Constrain Joints</string>
+    <string name="action_reset">Reset Sim</string>
 
     <!-- Labels -->
     <string name="name_label">Name:</string>

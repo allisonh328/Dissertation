@@ -44,6 +44,8 @@ import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +68,7 @@ public class SimulatorActivity extends AppCompatActivity {
     private Prototype mPrototype;
     private List<Link> mLinks;
     private List<Joint> mJoints;
+    private List<Point> points = new ArrayList<>();
     private List<Joint> fixJoints = new ArrayList<>();
     private Joint editJoint = null;
     private Point origin;
@@ -135,23 +138,7 @@ public class SimulatorActivity extends AppCompatActivity {
             public void onChanged(@Nullable final Prototype prototype) {
 
                 mPrototype = prototype;
-                Bitmap bitmap = null;
-                try {
-                    String filename = mPrototype.getPrototypeBitmap();
-                    Log.i(TAG, filename);
-
-                    FileInputStream input = new FileInputStream(new File(filename));
-                    if (input.available() != 0) {
-                        bitmap = BitmapFactory.decodeStream(input);
-                    }
-                    input.close();
-                } catch (Exception e) {
-                    Log.e(TAG, "File input Error: ", e);
-                }
-
-                backgroundBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-                bitmap.recycle();
-                background = new Canvas(backgroundBitmap);
+                setBackground();
 
                 mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(SimulatorActivity.this, new Observer<List<Link>>() {
                     @Override
@@ -163,7 +150,7 @@ public class SimulatorActivity extends AppCompatActivity {
                             public void onChanged(@Nullable final List<Joint> joints) {
                                 mJoints = joints;
                                 for (Joint joint : mJoints) {
-                                    //points.add(new Point(joint.getXCoord(), joint.getYCoord()));
+                                    points.add(new Point(joint.getXCoord(), joint.getYCoord()));
                                 }
                                 drawFrame(mJoints);
                             }
@@ -254,6 +241,13 @@ public class SimulatorActivity extends AppCompatActivity {
 
                 }
             });
+        } else if (id == R.id.action_reset) {
+            setBackground();
+            for (int i = 0; i < mJoints.size(); i++) {
+                mJoints.get(i).setXCoord(points.get(i).x);
+                mJoints.get(i).setYCoord(points.get(i).y);
+            }
+            drawFrame(mJoints);
         } else if (id == R.id.action_help) {
             FragmentManager fm = getSupportFragmentManager();
             HelpFragment fragment = new HelpFragment();
@@ -340,6 +334,25 @@ public class SimulatorActivity extends AppCompatActivity {
         mSimulatorView.stopThread();
     }
 
+    private void setBackground() {
+        Bitmap bitmap = null;
+        try {
+            String filename = mPrototype.getPrototypeBitmap();
+            Log.i(TAG, filename);
+
+            FileInputStream input = new FileInputStream(new File(filename));
+            if (input.available() != 0) {
+                bitmap = BitmapFactory.decodeStream(input);
+            }
+            input.close();
+        } catch (Exception e) {
+            Log.e(TAG, "File input Error: ", e);
+        }
+
+        backgroundBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+        bitmap.recycle();
+        background = new Canvas(backgroundBitmap);
+    }
 
     private void drawFrame(List<Joint> drawingPoints) {
 
@@ -374,6 +387,12 @@ public class SimulatorActivity extends AppCompatActivity {
 
 
     public void animateMechanism(View view) {
+
+        // Save initial state
+        for (int i = 0; i < mJoints.size(); i++) {
+            points.get(i).x = mJoints.get(i).getXCoord();
+            points.get(i).y = mJoints.get(i).getYCoord();
+        }
 
         // Initialise variables
         complete.clear();
