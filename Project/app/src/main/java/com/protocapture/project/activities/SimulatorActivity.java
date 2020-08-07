@@ -16,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -379,6 +380,14 @@ public class SimulatorActivity extends AppCompatActivity {
             double x = joint.getXCoord();
             double y = joint.getYCoord();
             drawable.drawCircle((float) x, (float) y, 8, jointsPaint);
+            if(joint.getConstraint().equals(Joint.FIXED)) {
+                Path path = new Path();
+                path.moveTo((float) x, (float) y);
+                path.lineTo((float) x + 12, (float) y + 16);
+                path.lineTo((float) x - 12, (float) y + 16);
+                path.lineTo((float) x, (float) y);
+                drawable.drawPath(path, linksPaint);
+            }
             background.drawCircle((float) x, (float) y, 2, pathPaint);
         }
 
