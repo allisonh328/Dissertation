@@ -85,6 +85,7 @@ public class SimulatorActivity extends AppCompatActivity {
     private boolean selectFixJoints = false;
     private Integer motorIndex = -1;
     private boolean kill = false;
+    private int moveCounter = 0;
 
     //private final ArrayList<Point> points = new ArrayList<>();
 
@@ -306,6 +307,7 @@ public class SimulatorActivity extends AppCompatActivity {
                 if (selectEditJoint || selectDriver || selectFixJoints) {
                     break;
                 }
+                moveCounter++;
                 xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
                 yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
                 if (match == null) {
@@ -313,8 +315,11 @@ public class SimulatorActivity extends AppCompatActivity {
                 } else {
                     match.setXCoord((double) xTouch);
                     match.setYCoord((double) yTouch);
-                    drawFrame(mJoints);
                     mJointViewModel.updateJoint(match);
+                    if(moveCounter > 7) {
+                        drawFrame(mJoints);
+                        moveCounter = 0;
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
