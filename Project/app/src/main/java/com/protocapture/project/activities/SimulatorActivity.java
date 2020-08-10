@@ -108,10 +108,12 @@ public class SimulatorActivity extends AppCompatActivity {
         ab.setDisplayHomeAsUpEnabled(true);
         // Set the Title of the screen to the Prototype name
         String prototypeName = getIntent().getStringExtra(EXTRA_MESSAGE);
-        myToolbar.setTitle(prototypeName);
+        //myToolbar.setTitle(prototypeName);
 
         okButton = (Button) findViewById(R.id.button_ok);
         okButton.bringToFront();
+
+        Toast.makeText(this, "Click and drag links to edit!", Toast.LENGTH_LONG).show();
 
         // Set up Paint to draw the motion profile
         pathPaint = new Paint();
@@ -140,6 +142,8 @@ public class SimulatorActivity extends AppCompatActivity {
 
                 mPrototype = prototype;
                 setBackground();
+
+                myToolbar.setTitle(mPrototype.getPrototypeName());
 
                 mLinkViewModel.getAllProtoLinks(mPrototype.getPrototypeId()).observe(SimulatorActivity.this, new Observer<List<Link>>() {
                     @Override

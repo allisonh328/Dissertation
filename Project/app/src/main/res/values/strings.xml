@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Project</string>
-    <string name="hint_proto">Prototype name</string>
+    <string name="app_name">ProtoCapture</string>
+    <string name="hint_proto">Mechanism name</string>
 
     <!-- Buttons -->
     <string name="create_button">Create</string>
@@ -41,10 +41,9 @@
         * If your joints are not being detected, try darkening them or making them larger. Also try adjusting the lighting.\n
         * If too many features are being detected, try panning out or redrawing your mechanism with lighter lines.\n
         * If you capture a mechanism too zoomed in, it may be difficult to view the simulation later. However, if you are too far out, it may be difficult to add links properly if joints are too close together.\n
-        * Select "Add joints" to add joints to your mechanism. Clicking "Add" makes them permanent. Clicking "Cancel" removes any joints you have just added. Joints can be deleted later.\n
-        * Select "Add links" to combine joints into links. Clicking "Add" makes a single link permanent. Clicking "Done" saves the entire mechanism and takes you to the "View Mechanism" page. Clicking "Cancel" removes any linkss you have just added. Links can be deleted later.\n
-        * When adding links, first select the two endpoints, then any other joints that fall on the link.\n
-        * Joints can only support two links, so if there is a place where multiple links come together, you may have to add two close joints at that location and have a different link attaching to each joint.</string>
+        * Select "Add Joints" to add joints to your mechanism. Clicking "Add" makes them permanent. Clicking "Cancel" removes any joints you have just added. Joints can be deleted later.\n
+        * Select "Add Links" to combine joints into links. Clicking "Add" makes a single link permanent. Clicking "Done" saves the entire mechanism and takes you to the "View Mechanism" page. Clicking "Cancel" removes any links you have just added. Links can be deleted later.\n
+        * When adding links, select the joints in order, beginning and ending with the endpoints.\n</string>
 
     <string name="simulate_help_text">* Drag a joint to adjust its location and its associated links. It can be slow, so make sure it has caught up before removing your finger. The new location is permanent and will be remembered even if you navigate away from the page.\n
         * Select "Edit Joint" to view the Edit Joint page. You will be able to manually edit a joint\'s location and constraints, as well as its name.\n

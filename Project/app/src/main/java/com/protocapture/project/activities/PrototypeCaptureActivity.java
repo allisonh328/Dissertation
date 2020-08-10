@@ -252,7 +252,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 @Override
                 public void onClick(View v) {
                     addJoints = false;
-                    //setJoints();
                     mRgba = drawable.clone();
                     createButton.setVisibility(View.GONE);
                     cancelButton.setVisibility(View.GONE);
@@ -283,7 +282,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
             createLinks = true;
             addJoints = false;
-            Toast.makeText(this, "Select endpoints first, then any other joints on the link.\n" +
+            Toast.makeText(this, "Select joints in order, beginning and ending with the endpoints.\n" +
                     "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
             drawable = mRgba.clone();
 
@@ -391,11 +390,11 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         link.setLinkName(linkName);
         fakeID++;
         link.setEndpoint1(lines.get(0).getJointId());
-        link.setEndpoint2(lines.get(1).getJointId());
+        link.setEndpoint2(lines.get(lines.size() - 1).getJointId());
         Log.i(TAG, "there are " + lines.size() + " Joints in lines");
         mLinkViewModel.insert(link);
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
-        Point endpoint2 = new Point(lines.get(1).getXCoord(), lines.get(1).getYCoord());
+        Point endpoint2 = new Point(lines.get(lines.size() - 1).getXCoord(), lines.get(lines.size() - 1).getYCoord());
         linkList.put(linkName, new ArrayList<Joint>(lines));
         Imgproc.line(drawable, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
     }
@@ -523,25 +522,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         float maxDistance = width/30;
         float xTouch = (event.getX() / width) * mRgba.cols();
         float yTouch = (event.getY() / height) * mRgba.rows();
-       /* int rotation = windowManager.getDefaultDisplay().getRotation();
-        switch (rotation) {
-            case Surface.ROTATION_0:
-                yTouch = ((width - event.getX()) / width) * mRgba.rows();
-                xTouch = (event.getY() / height) * mRgba.cols();
-                break;
-            case Surface.ROTATION_90:
-                xTouch =
-                yTouch =
-                break;
-            case Surface.ROTATION_180:
-                yTouch = ((width - event.getX()) / width) * mRgba.rows();
-                xTouch = ((height - event.getY()) / height) * mRgba.cols();
-                break;
-            case Surface.ROTATION_270:
-                xTouch = ((width - event.getX()) / width) * mRgba.cols();
-                yTouch = ((height - event.getY()) / height) * mRgba.rows();
-                break;
-        }*/
 
         Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
         int index = -1;
