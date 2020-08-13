@@ -592,19 +592,19 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             long startTime = System.nanoTime();
 
             Imgproc.cvtColor(mRgba, bwMat, Imgproc.COLOR_BGR2GRAY);
-            Core.inRange(bwMat, new Scalar(0, 0, 0), new Scalar(20, 20, 10), threshImage);
-            Imgproc.blur(threshImage, threshImage, new Size(3, 3));
-            Imgproc.threshold(threshImage, threshImage, 200, 255, Imgproc.THRESH_BINARY);
+            Core.inRange(bwMat, new Scalar(0, 0, 0), new Scalar(30, 30, 30), threshImage);
+            Imgproc.blur(threshImage, threshImage, new Size(5, 5));
+            //Imgproc.threshold(threshImage, threshImage, 200, 255, Imgproc.THRESH_BINARY);
 
             Imgproc.findContours(threshImage, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            double minArea = 8;
+            double minArea = 30;
+            double maxArea = 300;
             float[] radius = new float[1];
-
 
             for (int i = 0; i < contours.size(); i++) {
                 MatOfPoint c1 = contours.get(i);
-                if (Imgproc.contourArea(c1) > minArea) {
+                if (Imgproc.contourArea(c1) > minArea && Imgproc.contourArea(c1) < maxArea) {
                     MatOfPoint2f c2f = new MatOfPoint2f(c1.toArray());
                     org.opencv.core.Point center = new Point();
                     Imgproc.minEnclosingCircle(c2f, center, radius);
