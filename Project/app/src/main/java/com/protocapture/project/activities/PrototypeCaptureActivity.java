@@ -592,8 +592,9 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             long startTime = System.nanoTime();
 
             Imgproc.cvtColor(mRgba, bwMat, Imgproc.COLOR_BGR2GRAY);
-            Core.inRange(bwMat, new Scalar(0, 0, 0), new Scalar(30, 30, 30), threshImage);
-            Imgproc.blur(threshImage, threshImage, new Size(5, 5));
+            Imgproc.blur(bwMat, threshImage, new Size(5, 5));
+            Core.inRange(threshImage, new Scalar(0, 0, 0), new Scalar(30, 30, 30), threshImage);
+
             //Imgproc.threshold(threshImage, threshImage, 200, 255, Imgproc.THRESH_BINARY);
 
             Imgproc.findContours(threshImage, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -613,8 +614,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     Imgproc.circle(mRgba, center, (int) radius[0], new Scalar(0, 240, 0), 2);
                 }
             }
-
-            Log.i(TAG, "MainActivity.onCameraFrame: # contours = " + Long.toString(centers.size()));
 
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
