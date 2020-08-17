@@ -82,6 +82,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private boolean paused = false;
     private Mat mRgba;
     private Mat drawable;
+    private Mat joints;
     private PrototypeViewModel mPrototypeViewModel;
     private LinkViewModel mLinkViewModel;
     private JointViewModel mJointViewModel;
@@ -253,6 +254,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 public void onClick(View v) {
                     addJoints = false;
                     mRgba = drawable.clone();
+                    joints = drawable.clone();
                     createButton.setVisibility(View.GONE);
                     cancelButton.setVisibility(View.GONE);
                 }
@@ -305,7 +307,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 public void onClick(View view) {
                     createLinks = false;
                     lines.clear();
-                    drawable = mRgba.clone();
+                    drawable = joints.clone();
                     deleteLinks();
                     cancelButton.setVisibility(View.GONE);
                     createButton.setVisibility(View.GONE);
@@ -396,7 +398,9 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         Point endpoint1 = new Point(lines.get(0).getXCoord(), lines.get(0).getYCoord());
         Point endpoint2 = new Point(lines.get(lines.size() - 1).getXCoord(), lines.get(lines.size() - 1).getYCoord());
         linkList.put(linkName, new ArrayList<Joint>(lines));
+        drawable = mRgba.clone();
         Imgproc.line(drawable, endpoint1, endpoint2, new Scalar(0, 0, 240), 5);
+        mRgba = drawable.clone();
     }
 
 
@@ -559,7 +563,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             for (Joint joint: mJoints) {
                 if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
                     if(!lines.contains(joint)) {
-                        Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 0, 0), -1);
+                        Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 240, 0), 4);
                         lines.add(joint);
                         createButton.setText(R.string.add_button);
                     }
@@ -567,7 +571,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             }
 
         }  else {
-            drawable = mRgba.clone();
+            //drawable = mRgba.clone();
             deleteJoints();
             deleteLinks();
             paused = !paused;
@@ -617,11 +621,12 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
-            try {
+           /* try {
                 Thread.sleep(300);
             } catch (InterruptedException ie) {
                 return mRgba;
-            }
+            }*/
+            drawable = mRgba.clone();
             return mRgba;
         } else {
             return drawable;

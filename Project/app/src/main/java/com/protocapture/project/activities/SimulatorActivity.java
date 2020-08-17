@@ -1,5 +1,6 @@
 package com.protocapture.project.activities;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -7,6 +8,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.MotionEventCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -386,10 +390,10 @@ public class SimulatorActivity extends AppCompatActivity {
             drawable.drawCircle((float) x, (float) y, 8, jointsPaint);
             if(joint.getConstraint().equals(Joint.FIXED)) {
                 Path path = new Path();
-                path.moveTo((float) x, (float) y);
-                path.lineTo((float) x + 12, (float) y + 16);
-                path.lineTo((float) x - 12, (float) y + 16);
-                path.lineTo((float) x, (float) y);
+                path.moveTo((float) x, (float) y + 4);
+                path.lineTo((float) x + 16, (float) y + 20);
+                path.lineTo((float) x - 16, (float) y + 20);
+                path.lineTo((float) x, (float) y + 4);
                 drawable.drawPath(path, linksPaint);
             }
             background.drawCircle((float) x, (float) y, 2, pathPaint);
