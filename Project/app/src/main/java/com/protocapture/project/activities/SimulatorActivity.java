@@ -347,6 +347,7 @@ public class SimulatorActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         mSimulatorView.stopThread();
+        mJointViewModel.updateJoints(mJoints);
     }
 
     private void setBackground() {
@@ -501,6 +502,25 @@ public class SimulatorActivity extends AppCompatActivity {
             }
 
             // Once all locations have been calculated, draw the step then start over
+            if(complete.size() != mJoints.size()) {
+                Toast.makeText(this, "Cannot calculate all points!\n" +
+                        "Mechanism may be under-constrained.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            for (Link link: mLinks) {
+                Joint joint1 = getJointbyId(link.getEndpoint1());
+                Joint joint2 = getJointbyId(link.getEndpoint2());
+                String name = joint1.getJointId() + "to" + joint2.getJointId();
+                Point point1 = new Point(joint1.getXCoord(), joint1.getYCoord());
+                Point point2 = new Point(joint2.getXCoord(), joint2.getYCoord());
+                double mag = getMagnitude(point1, point2);
+                Log.i(TAG, "magnitude = " + mag + ", radius = " + radii.get(name));
+                if(mag - radii.get(name) > .00001 || mag - radii.get(name) < -.00001) {
+                    Toast.makeText(this, "Invalid conditions!\n" +
+                            "Mechanism may be over-constrained.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
             drawFrame(complete);
             complete.clear();
         }
@@ -686,6 +706,7 @@ public class SimulatorActivity extends AppCompatActivity {
 
             // If determinant is less than zero, equations are unsolvable and there is no solution
             if (determinant < 0) {
+                Toast.makeText(this, "Limit reached.", Toast.LENGTH_SHORT).show();
                 kill = true;
                 return;
             }
