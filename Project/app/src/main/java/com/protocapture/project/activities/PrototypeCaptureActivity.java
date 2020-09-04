@@ -82,6 +82,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private boolean paused = false;
     private Mat mRgba;
     private Mat drawable;
+    private Mat toSave;
     private Mat joints;
     private PrototypeViewModel mPrototypeViewModel;
     private LinkViewModel mLinkViewModel;
@@ -375,16 +376,6 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     }
 
 
-   /* private void setJoints() {
-        mJointViewModel.getAllProtoJoints(mPrototype.getPrototypeId()).observe(this, new Observer<List<Joint>>() {
-            @Override
-            public void onChanged(@Nullable final List<Joint> jointsList) {
-                joints = jointsList;
-            }
-        });
-    }*/
-
-
     private void addLink() {
         Log.i(TAG, "in addLink");
         Link link = new Link();
@@ -407,8 +398,8 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
     private void saveBitmap() {
 
-        Bitmap bitmap = Bitmap.createBitmap(drawable.cols(), drawable.rows(), Bitmap.Config.RGB_565);
-        Utils.matToBitmap(drawable, bitmap);
+        Bitmap bitmap = Bitmap.createBitmap(toSave.cols(), toSave.rows(), Bitmap.Config.RGB_565);
+        Utils.matToBitmap(toSave, bitmap);
         String filename = getExternalCacheDir() + "/" + mPrototype.getPrototypeName() + ".png";
         File file = new File(filename);
 
@@ -536,7 +527,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
                 return true;
             }
-
+            Log.i(TAG, "Touch centers = " + centers.size());
             for (org.opencv.core.Point center : centers) {
 
                 if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
@@ -564,19 +555,24 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             for (Joint joint: mJoints) {
                 if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
                     if(!lines.contains(joint)) {
-                        Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 240, 0), 4);
                         lines.add(joint);
                         createButton.setText(R.string.add_button);
+                    } else {
+                        lines.remove(joint);
                     }
                 }
             }
+            drawable = mRgba.clone();
+            for(Joint joint: lines) {
+                Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 240, 0), 4);
+            }
 
         }  else {
-            //drawable = mRgba.clone();
+            toSave = drawable.clone();
             deleteJoints();
             deleteLinks();
             paused = !paused;
-            Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + Integer.toString(centers.size()));
+            Log.i(TAG, "MainActivity.onTouch: Paused -> # circles = " + centers.size());
         }
 
         //Log.i(TAG, "MainActivity.onTouch: I can go the distance");
@@ -588,13 +584,13 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         if(!paused) {
+            long startTime = System.nanoTime();
+
             mRgba = inputFrame.rgba();
-            centers.clear();
             Mat bwMat = new Mat();
             List<MatOfPoint> contours = new ArrayList<>();
+            ArrayList<Point> centersLocal = new ArrayList<>();
             Mat threshImage = new Mat();
-
-            long startTime = System.nanoTime();
 
             Imgproc.cvtColor(mRgba, bwMat, Imgproc.COLOR_BGR2GRAY);
             Imgproc.blur(bwMat, threshImage, new Size(5, 5));
@@ -604,8 +600,8 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
             Imgproc.findContours(threshImage, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            double minArea = 30;
-            double maxArea = 300;
+            double minArea = 50;
+            double maxArea = 1000;
             float[] radius = new float[1];
 
             for (int i = 0; i < contours.size(); i++) {
@@ -614,20 +610,19 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     MatOfPoint2f c2f = new MatOfPoint2f(c1.toArray());
                     org.opencv.core.Point center = new Point();
                     Imgproc.minEnclosingCircle(c2f, center, radius);
-                    centers.add(center);
+                    centersLocal.add(center);
                     //Log.i(TAG, "MainActivity.onCameraFrame: center at (" + center.x + "," + center.y + ")");
                     Imgproc.circle(mRgba, center, (int) radius[0], new Scalar(0, 240, 0), 2);
                 }
             }
 
+            drawable = mRgba.clone();
+            Log.i(TAG, "local Centers = " + centersLocal.size());
+            centers.clear();
+            centers = centersLocal;
+
             long stopTime = System.nanoTime();
             Log.i(TAG, "MainActivity.onCameraFrame: time elapsed = " + Long.toString(stopTime - startTime));
-           /* try {
-                Thread.sleep(300);
-            } catch (InterruptedException ie) {
-                return mRgba;
-            }*/
-            drawable = mRgba.clone();
             return mRgba;
         } else {
             return drawable;
