@@ -308,6 +308,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                     createLinks = false;
                     lines.clear();
                     drawable = joints.clone();
+                    mRgba = joints.clone();
                     deleteLinks();
                     cancelButton.setVisibility(View.GONE);
                     createButton.setVisibility(View.GONE);

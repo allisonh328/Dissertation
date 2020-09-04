@@ -77,6 +77,7 @@ public class SimulatorView extends SurfaceView implements
             @Override
             public void run() {
                 while (true) {
+
                     Runnable runnable;
                     try {
                         runnable = mQueue.take();
@@ -86,7 +87,10 @@ public class SimulatorView extends SurfaceView implements
                     if(runnable == POISON) {
                         return;
                     }
+                    long startTime = System.nanoTime();
                     runnable.run();
+                    long stopTime = System.nanoTime();
+                    Log.i(TAG, "SimulatorView: time elapsed = " + Long.toString(stopTime - startTime));
                 }
             }
         }).start();

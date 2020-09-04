@@ -310,6 +310,7 @@ public class SimulatorActivity extends AppCompatActivity {
                 if (selectEditJoint || selectDriver || selectFixJoints) {
                     break;
                 }
+                Log.i(TAG, "Time: " + System.nanoTime());
                 moveCounter++;
                 xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
                 yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
@@ -366,6 +367,7 @@ public class SimulatorActivity extends AppCompatActivity {
     private void drawFrame(List<Joint> drawingPoints) {
 
         Log.i(TAG, "drawing new frame");
+        long startTime = System.nanoTime();
 
         Bitmap drawableBitmap = backgroundBitmap.copy(backgroundBitmap.getConfig(), true);
         Canvas drawable = new Canvas(drawableBitmap);
@@ -400,6 +402,8 @@ public class SimulatorActivity extends AppCompatActivity {
         }
 
         mSimulatorView.drawBitmap(drawableBitmap);
+        long stopTime = System.nanoTime();
+        Log.i(TAG, "DrawFrame: time elapsed = " + Long.toString(stopTime - startTime));
     }
 
 
@@ -416,7 +420,7 @@ public class SimulatorActivity extends AppCompatActivity {
         motor = mJoints.get(motorIndex);
         origin = new Point(motor.getXCoord(), motor.getYCoord());
         Point motorPoint = convertCoordinates(new Point(motor.getXCoord(), motor.getYCoord()), origin);
-        Log.i(TAG, "motor point = (" + motorPoint.x + "," + motorPoint.y + ")");
+        //Log.i(TAG, "motor point = (" + motorPoint.x + "," + motorPoint.y + ")");
 
         // Add distances between joints (radii for later calculations)
         for (Joint joint1 : mJoints) {
@@ -435,13 +439,13 @@ public class SimulatorActivity extends AppCompatActivity {
         if (driveLink1ID != null) {
             Point endpoint1 = getOtherEndpoint(driveLink1ID, motor.getJointId());
             theta1 = getAngle(endpoint1, motorPoint);
-            Log.i(TAG, "Theta1 = " + theta1);
+            //Log.i(TAG, "Theta1 = " + theta1);
         }
         Integer driveLink2ID = motor.getLink2ID();
         if (driveLink2ID != null) {
             Point endpoint2 = getOtherEndpoint(driveLink2ID, motor.getJointId());
             theta2 = getAngle(endpoint2, motorPoint);
-            Log.i(TAG, "Theta2 = " + theta2);
+           // Log.i(TAG, "Theta2 = " + theta2);
         }
 
         // Add all FIXED joints to the "complete" list (their position is fixed)
@@ -487,7 +491,6 @@ public class SimulatorActivity extends AppCompatActivity {
                     // Iterate to finish simulation
                     iterate(1);
                     if (kill) {
-                        Log.i(TAG, "Double kill");
                         return;
                     }
 
@@ -496,11 +499,11 @@ public class SimulatorActivity extends AppCompatActivity {
                 }
                 return;
             }
-            Log.i(TAG, "animate method: I am not dead?");
 
             // Once all locations have been calculated, draw the step then start over
             drawFrame(complete);
             complete.clear();
+            kill = false;
         }
     }
 
@@ -508,14 +511,14 @@ public class SimulatorActivity extends AppCompatActivity {
         List<Joint> driveLink1Joints = getJointsOnLink(driveLinkID);
         for (Joint joint : driveLink1Joints) {
             if (!complete.contains(joint)) {
-                Log.i(TAG, "original point = (" + joint.getXCoord() + "," + joint.getYCoord() + ")");
+                //Log.i(TAG, "original point = (" + joint.getXCoord() + "," + joint.getYCoord() + ")");
                 //Point calcPoint = convertCoordinates(new Point(joint.getXCoord(), joint.getYCoord()), origin);
                 //double radius = getMagnitude(calcPoint, motorPoint);
                 double radius = radii.get(joint.getJointId() + "to" + motor.getJointId());
                 Point drawPoint = reconvertCoordinates(new Point(radius * Math.cos(theta), radius * Math.sin(theta)), origin);
                 joint.setXCoord(drawPoint.x);
                 joint.setYCoord(drawPoint.y);
-                Log.i(TAG, "new point = (" + drawPoint.x + "," + drawPoint.y + ")");
+                //Log.i(TAG, "new point = (" + drawPoint.x + "," + drawPoint.y + ")");
                 complete.add(joint);
                 Log.i(TAG, "adding " + joint.getJointName() + " to complete");
             }
@@ -669,9 +672,9 @@ public class SimulatorActivity extends AppCompatActivity {
 
             // Get radii from list
             double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
-            Log.i(TAG, "radius 1 = " + radius1);
+            //Log.i(TAG, "radius 1 = " + radius1);
             double radius2 = radii.get(joint2.getJointId() + "to" + joint1.getJointId());
-            Log.i(TAG, "radius 2 = " + radius2);
+            //Log.i(TAG, "radius 2 = " + radius2);
 
             // Lots of weird math to locate circle intersections
             double u = -1 * (fixed1.y - fixed2.y) / (fixed1.x - fixed2.x);
@@ -696,9 +699,9 @@ public class SimulatorActivity extends AppCompatActivity {
 
             // Find the location that is closest to the current location of the free joint
             double mag1 = getMagnitude(new Point(x1, y1), free);
-            Log.i(TAG, "Magnitude 1 = " + mag1);
+            //Log.i(TAG, "Magnitude 1 = " + mag1);
             double mag2 = getMagnitude(new Point(x2, y2), free);
-            Log.i(TAG, "Magnitude 2 = " + mag2);
+            //Log.i(TAG, "Magnitude 2 = " + mag2);
 
             // Change the location of the free joint to the correct point
             if (mag1 < mag2) {
@@ -716,7 +719,7 @@ public class SimulatorActivity extends AppCompatActivity {
 
         // Add the newly calculated joint to the complete list
         complete.add(joint1);
-        Log.i(TAG, "Added " + joint1.getJointName() + " to complete");
+       // Log.i(TAG, "Added " + joint1.getJointName() + " to complete");
     }
 
     private double sqr(double number) {
@@ -783,6 +786,14 @@ public class SimulatorActivity extends AppCompatActivity {
                 Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
             if (joint.getLink2ID() != null && joint.getLink2ID().equals(linkID)) {
+                linkJoints.add(joint);
+                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
+            }
+            if (joint.getLink3ID() != null && joint.getLink3ID().equals(linkID)) {
+                linkJoints.add(joint);
+                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
+            }
+            if (joint.getLink4ID() != null && joint.getLink4ID().equals(linkID)) {
                 linkJoints.add(joint);
                 Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
