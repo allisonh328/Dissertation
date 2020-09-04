@@ -128,13 +128,13 @@ public class SimulatorActivity extends AppCompatActivity {
         // Set up Paint to draw the joints (connecting points)
         jointsPaint = new Paint();
         jointsPaint.setAntiAlias(true);
-        jointsPaint.setColor(Color.BLACK);
+        jointsPaint.setColor(Color.RED);
         jointsPaint.setStyle(Paint.Style.FILL);
 
         // Set up Paint to draw the links (lines)
         linksPaint = new Paint();
         linksPaint.setAntiAlias(true);
-        linksPaint.setColor(Color.BLACK);
+        linksPaint.setColor(Color.RED);
         linksPaint.setStrokeWidth(4);
 
         mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
@@ -200,6 +200,7 @@ public class SimulatorActivity extends AppCompatActivity {
                         Toast.makeText(SimulatorActivity.this, "Please select a joint to edit.", Toast.LENGTH_SHORT).show();
                         return;
                     }
+                    okButton.setVisibility(View.GONE);
                     Intent intent = new Intent(SimulatorActivity.this, JointEditorActivity.class);
                     intent.putExtra("joint_id", editJoint.getJointId());
                     startActivityForResult(intent, JOINT_EDITOR_REQUEST_CODE);
@@ -207,7 +208,6 @@ public class SimulatorActivity extends AppCompatActivity {
             });
 
         } else if (id == R.id.action_view_sim) {
-            //selectDrawer = false;
             selectEditJoint = false;
             selectFixJoints = false;
             selectDriver = true;
@@ -246,8 +246,8 @@ public class SimulatorActivity extends AppCompatActivity {
                     }
                     mJointViewModel.updateJoints(fixJoints);
                     selectFixJoints = false;
+                    okButton.setVisibility(View.GONE);
                     Toast.makeText(SimulatorActivity.this, "Joints constrained!", Toast.LENGTH_LONG).show();
-
                 }
             });
         } else if (id == R.id.action_reset) {
