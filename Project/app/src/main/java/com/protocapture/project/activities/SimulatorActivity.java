@@ -314,13 +314,18 @@ public class SimulatorActivity extends AppCompatActivity {
                 moveCounter++;
                 xTouch = (event.getX() / displayMetrics.widthPixels) * background.getWidth();
                 yTouch = (event.getY() / displayMetrics.heightPixels) * background.getHeight();
-                if (match == null) {
-                    Log.i(TAG, "Joint has not been filled.");
+                if(match == null) {
+                    return true;
                 } else {
+                    int index = mJoints.indexOf(match);
+                    Log.i(TAG, "match = " + match.getJointName() + " index = " + index);
+                    Point moveJoint = points.get(index);
+                    moveJoint.x = xTouch;
+                    moveJoint.y = yTouch;
                     match.setXCoord((double) xTouch);
                     match.setYCoord((double) yTouch);
-                    mJointViewModel.updateJoint(match);
-                    if(moveCounter > 7) {
+                    //mJointViewModel.updateJoint(match);
+                    if (moveCounter > 7) {
                         drawFrame(mJoints);
                         moveCounter = 0;
                     }
@@ -409,12 +414,6 @@ public class SimulatorActivity extends AppCompatActivity {
 
     public void animateMechanism(View view) {
 
-        // Save initial state
-        for (int i = 0; i < mJoints.size(); i++) {
-            points.get(i).x = mJoints.get(i).getXCoord();
-            points.get(i).y = mJoints.get(i).getYCoord();
-        }
-
         // Initialise variables
         complete.clear();
         motor = mJoints.get(motorIndex);
@@ -491,6 +490,7 @@ public class SimulatorActivity extends AppCompatActivity {
                     // Iterate to finish simulation
                     iterate(1);
                     if (kill) {
+                        kill = false;
                         return;
                     }
 
@@ -503,7 +503,6 @@ public class SimulatorActivity extends AppCompatActivity {
             // Once all locations have been calculated, draw the step then start over
             drawFrame(complete);
             complete.clear();
-            kill = false;
         }
     }
 
@@ -805,10 +804,11 @@ public class SimulatorActivity extends AppCompatActivity {
 
     private Joint checkJointHit(float xTouch, float yTouch) {
         int maxDistance = displayMetrics.widthPixels / 30;
-        for (Joint joint : mJoints) {
+        for (int i = 0; i < mJoints.size(); i++) {
             Log.i(TAG, "SelectEditJoint: Touch at (" + xTouch + "," + yTouch + ")");
-            if (Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
-                return joint;
+            if (Math.abs(mJoints.get(i).getXCoord() - xTouch) < maxDistance && Math.abs(mJoints.get(i).getYCoord() - yTouch) < maxDistance) {
+                Log.i(TAG, "Index actually " + i);
+                return mJoints.get(i);
             }
         }
         return null;
