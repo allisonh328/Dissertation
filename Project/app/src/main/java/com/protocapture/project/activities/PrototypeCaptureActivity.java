@@ -80,6 +80,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
     private boolean createLinks = false;
     private boolean addJoints = false;
     private boolean paused = false;
+    private boolean waiting = false;
     private Mat mRgba;
     private Mat drawable;
     private Mat toSave;
@@ -246,6 +247,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             }
 
             addJoints = true;
+            waiting = false;
             createLinks = false;
             Toast.makeText(PrototypeCaptureActivity.this, "Select all joints, then click 'add'", Toast.LENGTH_LONG).show();
 
@@ -254,10 +256,11 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 @Override
                 public void onClick(View v) {
                     addJoints = false;
+                    waiting = true;
                     mRgba = drawable.clone();
                     joints = drawable.clone();
                     createButton.setVisibility(View.GONE);
-                    cancelButton.setVisibility(View.GONE);
+                    cancelButton.setText(R.string.button_back);
                 }
             });
 
@@ -265,11 +268,19 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             cancelButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    addJoints = false;
-                    drawable = mRgba.clone();
-                    deleteJoints();
-                    cancelButton.setVisibility(View.GONE);
+                    if (waiting) {
+                        paused = false;
+                        waiting = false;
+                        cancelButton.setVisibility(View.GONE);
+                    } else {
+                        addJoints = false;
+                        waiting = true;
+                        drawable = mRgba.clone();
+                        cancelButton.setText(R.string.button_back);
+                    }
                     createButton.setVisibility(View.GONE);
+                    deleteJoints();
+
                 }
             });
 
@@ -284,6 +295,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
             }
 
             createLinks = true;
+            waiting = false;
             addJoints = false;
             Toast.makeText(this, "Select joints in order, beginning and ending with the endpoints.\n" +
                     "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
@@ -302,16 +314,24 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 }
             });
 
+            cancelButton.setText(R.string.cancel_button);
             cancelButton.setVisibility(View.VISIBLE);
             cancelButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    createLinks = false;
-                    lines.clear();
-                    drawable = joints.clone();
-                    mRgba = joints.clone();
+                    if (waiting) {
+                        paused = false;
+                        waiting = false;
+                        cancelButton.setVisibility(View.GONE);
+                    } else {
+                        createLinks = false;
+                        waiting = true;
+                        lines.clear();
+                        drawable = joints.clone();
+                        mRgba = joints.clone();
+                        cancelButton.setText(R.string.button_back);
+                    }
                     deleteLinks();
-                    cancelButton.setVisibility(View.GONE);
                     createButton.setVisibility(View.GONE);
                 }
             });
@@ -512,6 +532,9 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
         if (event.getAction() != MotionEvent.ACTION_DOWN && event.getAction() != MotionEvent.ACTION_POINTER_DOWN) {
             //Log.i(TAG, "MainActivity.onTouch: Leavin on a jetplane.");
+            return true;
+        }
+        if (waiting) {
             return true;
         }
 

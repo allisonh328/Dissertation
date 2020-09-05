@@ -17,6 +17,7 @@
     <string name="cancel_button">Cancel</string>
     <string name="fix_button">Set as Fixed</string>
     <string name="button_close">Close</string>
+    <string name="button_back">Back to Capture</string>
 
     <!-- Actions -->
     <string name="action_add_joints">Add Joints</string>

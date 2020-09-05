@@ -128,13 +128,13 @@ public class SimulatorActivity extends AppCompatActivity {
         // Set up Paint to draw the joints (connecting points)
         jointsPaint = new Paint();
         jointsPaint.setAntiAlias(true);
-        jointsPaint.setColor(Color.RED);
+        jointsPaint.setColor(Color.BLUE);
         jointsPaint.setStyle(Paint.Style.FILL);
 
         // Set up Paint to draw the links (lines)
         linksPaint = new Paint();
         linksPaint.setAntiAlias(true);
-        linksPaint.setColor(Color.RED);
+        linksPaint.setColor(Color.BLUE);
         linksPaint.setStrokeWidth(4);
 
         mJointViewModel = new ViewModelProvider(this).get(JointViewModel.class);
@@ -450,10 +450,11 @@ public class SimulatorActivity extends AppCompatActivity {
 
         // Add all FIXED joints to the "complete" list (their position is fixed)
         for (double i = 0; i < 2 * Math.PI; i = i + 0.03) {
+            long startTime = System.nanoTime();
             for (Joint joint : mJoints) {
                 if (joint.getConstraint() == Joint.FIXED) {
                     complete.add(joint);
-                    Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
+                    //Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
                 }
             }
 
@@ -468,7 +469,7 @@ public class SimulatorActivity extends AppCompatActivity {
             // Iterate to finish simulation
             iterate(1);
             if (kill) {
-                Log.i(TAG, "Entered kill loop");
+                //Log.i(TAG, "Entered kill loop");
                 kill = false;
 
                 for (double j = i - 0.03; j > i - 2 * Math.PI; j = j - 0.03) {
@@ -476,7 +477,7 @@ public class SimulatorActivity extends AppCompatActivity {
                     for (Joint joint : mJoints) {
                         if (joint.getConstraint() == Joint.FIXED) {
                             complete.add(joint);
-                            Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
+                            //Log.i(TAG, "adding joint " + joint.getJointName() + " to fixed joints");
                         }
                     }
 
@@ -514,13 +515,16 @@ public class SimulatorActivity extends AppCompatActivity {
                 Point point1 = new Point(joint1.getXCoord(), joint1.getYCoord());
                 Point point2 = new Point(joint2.getXCoord(), joint2.getYCoord());
                 double mag = getMagnitude(point1, point2);
-                Log.i(TAG, "magnitude = " + mag + ", radius = " + radii.get(name));
-                if(mag - radii.get(name) > .00001 || mag - radii.get(name) < -.00001) {
+                //Log.i(TAG, "magnitude = " + mag + ", radius = " + radii.get(name));
+                if(mag - radii.get(name) > .001 || mag - radii.get(name) < -.001) {
                     Toast.makeText(this, "Invalid conditions!\n" +
                             "Mechanism may be over-constrained.", Toast.LENGTH_SHORT).show();
                     return;
                 }
             }
+
+            long stopTime = System.nanoTime();
+            Log.i(TAG, "Animation: time elapsed = " + Long.toString(stopTime - startTime));
             drawFrame(complete);
             complete.clear();
         }
@@ -539,7 +543,7 @@ public class SimulatorActivity extends AppCompatActivity {
                 joint.setYCoord(drawPoint.y);
                 //Log.i(TAG, "new point = (" + drawPoint.x + "," + drawPoint.y + ")");
                 complete.add(joint);
-                Log.i(TAG, "adding " + joint.getJointName() + " to complete");
+                //Log.i(TAG, "adding " + joint.getJointName() + " to complete");
             }
         }
     }
@@ -547,47 +551,47 @@ public class SimulatorActivity extends AppCompatActivity {
     private void iterate(int index) {
         // Get the next joint from the "complete" list (location has been calculated)
         Joint next = complete.get(index);
-        Log.i(TAG, "complete " + index + " is joint " + next.getJointName());
+        //Log.i(TAG, "complete " + index + " is joint " + next.getJointName());
 
         // Check the first link for a new point to calculate
         Integer link1id = next.getLink1ID();
         if (link1id != null) {
-            Log.i(TAG, "Trying link 1 of joint " + next.getJointName());
+            //Log.i(TAG, "Trying link 1 of joint " + next.getJointName());
             simulate(next, link1id);
         }
         if (kill) {
-            Log.i(TAG, "iterate method: I am dead!");
+            //Log.i(TAG, "iterate method: I am dead!");
             return;
         }
 
         // Check the second link for a new point to calculate
         Integer link2id = next.getLink2ID();
         if (link2id != null) {
-            Log.i(TAG, "Trying link 2 of joint " + next.getJointName());
+            //Log.i(TAG, "Trying link 2 of joint " + next.getJointName());
             simulate(next, link2id);
         }
         if (kill) {
-            Log.i(TAG, "iterate method: I am dead!");
+            //Log.i(TAG, "iterate method: I am dead!");
             return;
         }
 
         Integer link3id = next.getLink3ID();
         if (link3id != null) {
-            Log.i(TAG, "Trying link 3 of joint " + next.getJointName());
+            //Log.i(TAG, "Trying link 3 of joint " + next.getJointName());
             simulate(next, link3id);
         }
         if (kill) {
-            Log.i(TAG, "iterate method: I am dead!");
+            //Log.i(TAG, "iterate method: I am dead!");
             return;
         }
 
         Integer link4id = next.getLink4ID();
         if (link4id != null) {
-            Log.i(TAG, "Trying link 4 of joint " + next.getJointName());
+            //Log.i(TAG, "Trying link 4 of joint " + next.getJointName());
             simulate(next, link4id);
         }
         if (kill) {
-            Log.i(TAG, "iterate method: I am dead!");
+            //Log.i(TAG, "iterate method: I am dead!");
             return;
         }
 
@@ -611,45 +615,45 @@ public class SimulatorActivity extends AppCompatActivity {
             if (!complete.contains(joint1)) {
 
                 // Once a free joint has been located...
-                Log.i(TAG, "Found free joint " + joint1.getJointName());
+                //Log.i(TAG, "Found free joint " + joint1.getJointName());
 
                 // Check its first link for another fixed point (location already calculated)
                 Integer link1id = joint1.getLink1ID();
                 if (link1id != null) {
-                    Log.i(TAG, "Trying link 1 of joint " + joint1.getJointName());
+                    //Log.i(TAG, "Trying link 1 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link1id);
                 }
                 if (kill) {
-                    Log.i(TAG, "simulate method: I am dead!");
+                    //Log.i(TAG, "simulate method: I am dead!");
                     return;
                 }
 
                 // Check its second link for another fixed point (Location already calculated)
                 Integer link2id = joint1.getLink2ID();
                 if (link2id != null) {
-                    Log.i(TAG, "Trying link2 of joint " + joint1.getJointName());
+                    //Log.i(TAG, "Trying link2 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link2id);
                 }
                 if (kill) {
-                    Log.i(TAG, "simulate method: I am dead!");
+                    //Log.i(TAG, "simulate method: I am dead!");
                     return;
                 }
 
                 // Check its third link for another fixed point (location already calculated)
                 Integer link3id = joint1.getLink3ID();
                 if (link3id != null) {
-                    Log.i(TAG, "Trying link 3 of joint " + joint1.getJointName());
+                    //Log.i(TAG, "Trying link 3 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link3id);
                 }
                 if (kill) {
-                    Log.i(TAG, "simulate method: I am dead!");
+                    //Log.i(TAG, "simulate method: I am dead!");
                     return;
                 }
 
                 // Check its first link for another fixed point (location already calculated)
                 Integer link4id = joint1.getLink4ID();
                 if (link4id != null) {
-                    Log.i(TAG, "Trying link 4 of joint " + joint1.getJointName());
+                    //Log.i(TAG, "Trying link 4 of joint " + joint1.getJointName());
                     completeSimulation(joint0, joint1, link4id);
                 }
             }
@@ -671,7 +675,7 @@ public class SimulatorActivity extends AppCompatActivity {
         for (Joint joint : link2Joints) {
             if (complete.contains(joint) && !joint.equals(joint0)) {
                 joint2 = joint;
-                Log.i(TAG, "Found second fixed joint: " + joint2.getJointName());
+                //Log.i(TAG, "Found second fixed joint: " + joint2.getJointName());
             }
         }
         if (joint2 == null) {
@@ -683,11 +687,11 @@ public class SimulatorActivity extends AppCompatActivity {
 
             // Convert all points into a coordinate system that's easy to deal with
             Point fixed1 = convertCoordinates(new Point(joint0.getXCoord(), joint0.getYCoord()), origin);
-            Log.i(TAG, "Fixed1 = " + joint0.getJointName());
+            //Log.i(TAG, "Fixed1 = " + joint0.getJointName());
             Point free = convertCoordinates(new Point(joint1.getXCoord(), joint1.getYCoord()), origin);
-            Log.i(TAG, "Free = " + joint1.getJointName());
+            //Log.i(TAG, "Free = " + joint1.getJointName());
             Point fixed2 = convertCoordinates(new Point(joint2.getXCoord(), joint2.getYCoord()), origin);
-            Log.i(TAG, "Fixed2 = " + joint2.getJointName());
+            //Log.i(TAG, "Fixed2 = " + joint2.getJointName());
 
             // Get radii from list
             double radius1 = radii.get(joint0.getJointId() + "to" + joint1.getJointId());
@@ -702,7 +706,7 @@ public class SimulatorActivity extends AppCompatActivity {
             double bQuad = 2 * u * v - 2 * fixed1.x * u - 2 * fixed1.y;
             double cQuad = sqr(v) - 2 * fixed1.x * v + sqr(fixed1.x) + sqr(fixed1.y) - sqr(radius1);
             double determinant = sqr(bQuad) - 4 * aQuad * cQuad;
-            Log.i(TAG, "determinant = " + determinant);
+            //Log.i(TAG, "determinant = " + determinant);
 
             // If determinant is less than zero, equations are unsolvable and there is no solution
             if (determinant < 0) {
@@ -803,19 +807,19 @@ public class SimulatorActivity extends AppCompatActivity {
         for (Joint joint : mJoints) {
             if (joint.getLink1ID() != null && joint.getLink1ID().equals(linkID)) {
                 linkJoints.add(joint);
-                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
+                //Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
             if (joint.getLink2ID() != null && joint.getLink2ID().equals(linkID)) {
                 linkJoints.add(joint);
-                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
+                //Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
             if (joint.getLink3ID() != null && joint.getLink3ID().equals(linkID)) {
                 linkJoints.add(joint);
-                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
+                //Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
             if (joint.getLink4ID() != null && joint.getLink4ID().equals(linkID)) {
                 linkJoints.add(joint);
-                Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
+                //Log.i(TAG, "Adding " + joint.getJointName() + " to " + linkID);
             }
         }
 

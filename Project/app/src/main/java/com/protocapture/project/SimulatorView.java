@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -21,6 +22,8 @@ public class SimulatorView extends SurfaceView implements
     //private Bitmap mBitmap;
     final SurfaceHolder surfaceHolder;
     private Paint paint = new Paint();
+    private float width;
+    private float height;
     private final BlockingQueue<Runnable> mQueue = new LinkedBlockingQueue<>();
     private static final Runnable POISON = new Runnable() {
         @Override
@@ -50,7 +53,7 @@ public class SimulatorView extends SurfaceView implements
     }
 
     public void drawBitmap(Bitmap bitmap) {
-        final Bitmap mBitmap = bitmap;
+        final Bitmap mBitmap = Bitmap.createScaledBitmap(bitmap, (int) width, (int) height, false);
 
         Runnable nextFrame = new Runnable() {
             @Override
@@ -58,7 +61,7 @@ public class SimulatorView extends SurfaceView implements
                 Canvas canvas = null;
                 try {
                     canvas = surfaceHolder.lockCanvas(null);
-                    canvas.drawBitmap(mBitmap, null, new RectF(0, 0, canvas.getWidth(), canvas.getHeight()), paint);
+                    canvas.drawBitmap(mBitmap, (float) 0.0, (float) 0.0, paint);
                 } finally {
                     surfaceHolder.unlockCanvasAndPost(canvas);
                 }
@@ -112,6 +115,14 @@ public class SimulatorView extends SurfaceView implements
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         surfaceAvailable = true;
         Log.i(TAG, "Surface Created");
+        Canvas canvas = null;
+        try {
+            canvas = surfaceHolder.lockCanvas(null);
+            width = canvas.getWidth();
+            height = canvas.getHeight();
+        } finally {
+            surfaceHolder.unlockCanvasAndPost(canvas);
+        }
         drawThread();
     }
 
