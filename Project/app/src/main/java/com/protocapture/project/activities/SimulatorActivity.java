@@ -74,7 +74,8 @@ public class SimulatorActivity extends AppCompatActivity {
     private List<Link> mLinks;
     private List<Joint> mJoints;
     private List<Point> points = new ArrayList<>();
-    private List<Joint> fixJoints = new ArrayList<>();
+    //private List<Joint> fixJoints = new ArrayList<>();
+    private List<Integer> selected = new ArrayList<>();
     private Joint editJoint = null;
     private Point origin;
     private ArrayList<Joint> complete = new ArrayList<>();
@@ -182,6 +183,8 @@ public class SimulatorActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         int id = item.getItemId();
+        selected.clear();
+        drawFrame(mJoints);
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit_joint) {
@@ -201,6 +204,7 @@ public class SimulatorActivity extends AppCompatActivity {
                         return;
                     }
                     okButton.setVisibility(View.GONE);
+                    selected.clear();
                     Intent intent = new Intent(SimulatorActivity.this, JointEditorActivity.class);
                     intent.putExtra("joint_id", editJoint.getJointId());
                     startActivityForResult(intent, JOINT_EDITOR_REQUEST_CODE);
@@ -211,6 +215,7 @@ public class SimulatorActivity extends AppCompatActivity {
             selectEditJoint = false;
             selectFixJoints = false;
             selectDriver = true;
+
             Toast.makeText(SimulatorActivity.this, "Select motor location.", Toast.LENGTH_LONG).show();
             okButton.setText(R.string.button_animate);
             okButton.setVisibility(View.VISIBLE);
@@ -222,6 +227,8 @@ public class SimulatorActivity extends AppCompatActivity {
                         Toast.makeText(SimulatorActivity.this, "Please select motor location.", Toast.LENGTH_LONG).show();
                         return;
                     }
+                    selected.clear();
+                    selectDriver = false;
                     animateMechanism(mSimulatorView);
                 }
             });
@@ -230,23 +237,33 @@ public class SimulatorActivity extends AppCompatActivity {
             selectEditJoint = false;
             selectDriver = false;
             selectFixJoints = true;
-            Toast.makeText(SimulatorActivity.this, "Select joints to set as fixed.", Toast.LENGTH_LONG).show();
+            Toast.makeText(SimulatorActivity.this, "Selected joints will be fixed.\n" +
+                    "All others will be free.", Toast.LENGTH_LONG).show();
             okButton.setText(R.string.fix_button);
             okButton.setVisibility(View.VISIBLE);
+
+            for(int i = 0; i < mJoints.size(); i++) {
+                if (mJoints.get(i).getConstraint() == Joint.FIXED) {
+                    //fixJoints.add(mJoints.get(i));
+                    selected.add(i);
+                }
+            }
+            drawFrame(mJoints);
 
             okButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (fixJoints.isEmpty()) {
-                        Toast.makeText(SimulatorActivity.this, "Please select joints to constrain.", Toast.LENGTH_LONG).show();
-                        return;
+                    for(int i = 0; i < mJoints.size(); i++) {
+                        if(selected.contains(i)) {
+                            mJoints.get(i).setConstraint(Joint.FIXED);
+                        } else {
+                            mJoints.get(i).setConstraint(Joint.FREE);
+                        }
                     }
-                    for(Joint joint: fixJoints) {
-                        joint.setConstraint(Joint.FIXED);
-                    }
-                    mJointViewModel.updateJoints(fixJoints);
+                    mJointViewModel.updateJoints(mJoints);
                     selectFixJoints = false;
                     okButton.setVisibility(View.GONE);
+                    selected.clear();
                     Toast.makeText(SimulatorActivity.this, "Joints constrained!", Toast.LENGTH_LONG).show();
                 }
             });
@@ -295,15 +312,27 @@ public class SimulatorActivity extends AppCompatActivity {
                     if (match.getConstraint() != Joint.FIXED) {
                         Toast.makeText(this, "The motor location must be a fixed joint.", Toast.LENGTH_LONG).show();
                     } else {
+                        selected.clear();
                         motorIndex = mJoints.indexOf(match);
+                        selected.add(motorIndex);
+                        drawFrame(mJoints);
                         Toast.makeText(this, "Ready to animate!", Toast.LENGTH_SHORT).show();
                     }
                 } else if (selectEditJoint) {
+                    selected.clear();
                     editJoint = match;
-                    Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_SHORT).show();
+                    selected.add(mJoints.indexOf(match));
+                    drawFrame(mJoints);
+                    //Toast.makeText(this, "Edit " + editJoint.getJointName() + "?", Toast.LENGTH_SHORT).show();
                 } else if (selectFixJoints) {
-                    fixJoints.add(match);
-                    Toast.makeText(this, "Joint " + match.getJointName() + " selected.", Toast.LENGTH_SHORT).show();
+                    if(selected.contains(mJoints.indexOf(match))) {
+                        selected.remove((Object) mJoints.indexOf(match));
+                        drawFrame(mJoints);
+                    } else {
+                        selected.add(mJoints.indexOf(match));
+                        drawFrame(mJoints);
+                    }
+                    //Toast.makeText(this, "Joint " + match.getJointName() + " selected.", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -334,8 +363,8 @@ public class SimulatorActivity extends AppCompatActivity {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
             case MotionEvent.ACTION_CANCEL:
-                selectDriver = false;
-                selectEditJoint = false;
+                //selectDriver = false;
+                //selectEditJoint = false;
                 match = null;
                 break;
         }
@@ -391,11 +420,18 @@ public class SimulatorActivity extends AppCompatActivity {
         }
 
         // Draw joints & motion profiles
-        for (Joint joint : drawingPoints) {
+        for (int i = 0; i < drawingPoints.size(); i++) {
+            Joint joint = drawingPoints.get(i);
             //Log.i(TAG, "Point at: (" + point.x + "," + point.y + ")");
             double x = joint.getXCoord();
             double y = joint.getYCoord();
-            drawable.drawCircle((float) x, (float) y, 8, jointsPaint);
+            if(selected.contains(i)) {
+                jointsPaint.setColor(Color.RED);
+                drawable.drawCircle((float) x, (float) y, 8, jointsPaint);
+                jointsPaint.setColor(Color.BLUE);
+            } else {
+                drawable.drawCircle((float) x, (float) y, 8, jointsPaint);
+            }
             if(joint.getConstraint().equals(Joint.FIXED)) {
                 Path path = new Path();
                 path.moveTo((float) x, (float) y + 4);
