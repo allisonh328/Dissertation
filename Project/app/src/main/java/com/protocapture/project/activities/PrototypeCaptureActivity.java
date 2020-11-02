@@ -245,44 +245,7 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 Toast.makeText(this, "Pause feed before adding joints", Toast.LENGTH_LONG).show();
                 return true;
             }
-
-            addJoints = true;
-            waiting = false;
-            createLinks = false;
-            Toast.makeText(PrototypeCaptureActivity.this, "Select all joints, then click 'add'", Toast.LENGTH_LONG).show();
-
-            createButton.setVisibility(View.VISIBLE);
-            createButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    addJoints = false;
-                    waiting = true;
-                    mRgba = drawable.clone();
-                    joints = drawable.clone();
-                    createButton.setVisibility(View.GONE);
-                    cancelButton.setText(R.string.button_back);
-                }
-            });
-
-            cancelButton.setVisibility(View.VISIBLE);
-            cancelButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (waiting) {
-                        paused = false;
-                        waiting = false;
-                        cancelButton.setVisibility(View.GONE);
-                    } else {
-                        addJoints = false;
-                        waiting = true;
-                        drawable = mRgba.clone();
-                        cancelButton.setText(R.string.button_back);
-                    }
-                    createButton.setVisibility(View.GONE);
-                    deleteJoints();
-
-                }
-            });
+            actionAddJoint();
 
         } else if (id == R.id.action_add_link) {
             if(!paused) {
@@ -293,59 +256,122 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
                 Toast.makeText(this, "Please select joints first", Toast.LENGTH_LONG).show();
                 return true;
             }
+            actionAddLink();
 
-            createLinks = true;
-            waiting = false;
-            addJoints = false;
-            Toast.makeText(this, "Select joints in order, beginning and ending with the endpoints.\n" +
-                    "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
-            drawable = mRgba.clone();
-
-            createButton.setVisibility(View.VISIBLE);
-            createButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if(createButton.getText().equals("Done")) {
-                        clickDone();
-                    } else {
-                        clickAdd();
-                        createButton.setText(R.string.done_button);
-                    }
-                }
-            });
-
-            cancelButton.setText(R.string.cancel_button);
-            cancelButton.setVisibility(View.VISIBLE);
-            cancelButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (waiting) {
-                        paused = false;
-                        waiting = false;
-                        cancelButton.setVisibility(View.GONE);
-                    } else {
-                        createLinks = false;
-                        waiting = true;
-                        lines.clear();
-                        drawable = joints.clone();
-                        mRgba = joints.clone();
-                        cancelButton.setText(R.string.button_back);
-                    }
-                    deleteLinks();
-                    createButton.setVisibility(View.GONE);
-                }
-            });
         } else if (id == R.id.action_help) {
-            FragmentManager fm = getSupportFragmentManager();
-            HelpFragment fragment = new HelpFragment();
-            fragment.setStyle(HelpFragment.STYLE_NORMAL, R.style.CustomDialog);
-            Bundle args = new Bundle();
-            args.putString("key", "capture");
-            fragment.setArguments(args);
-            fragment.show(fm, "fragment_help");
+            actionHelp();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    private void actionAddJoint() {
+        addJoints = true;
+        waiting = false;
+        createLinks = false;
+        Toast.makeText(PrototypeCaptureActivity.this, "Select all joints, then click 'add'", Toast.LENGTH_LONG).show();
+
+        for(Point center: centers) {
+            Imgproc.circle(drawable, center, 8, new Scalar(240, 0, 0), -1);
+            Joint joint = new Joint();
+            String jointName = mPrototype.getPrototypeName() + "Joint" + fakeID;
+            fakeID++;
+            joint.setJointName(jointName);
+            joint.setPrototypeID(mPrototype.getPrototypeId());
+            joint.setXCoord(center.x);
+            joint.setYCoord(center.y);
+            mJointViewModel.insert(joint);
+        }
+
+        createButton.setVisibility(View.VISIBLE);
+        createButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addJoints = false;
+                waiting = true;
+                mRgba = drawable.clone();
+                joints = drawable.clone();
+                createButton.setVisibility(View.GONE);
+                cancelButton.setText(R.string.button_back);
+            }
+        });
+
+        cancelButton.setVisibility(View.VISIBLE);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (waiting) {
+                    paused = false;
+                    waiting = false;
+                    cancelButton.setVisibility(View.GONE);
+                } else {
+                    addJoints = false;
+                    waiting = true;
+                    drawable = mRgba.clone();
+                    cancelButton.setText(R.string.button_back);
+                }
+                createButton.setVisibility(View.GONE);
+                deleteJoints();
+
+            }
+        });
+    }
+
+
+    private void actionAddLink() {
+        createLinks = true;
+        waiting = false;
+        addJoints = false;
+        Toast.makeText(this, "Select joints in order, beginning and ending with the endpoints.\n" +
+                "Click 'Add' to create link.", Toast.LENGTH_LONG).show();
+        drawable = mRgba.clone();
+
+        createButton.setVisibility(View.VISIBLE);
+        createButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(createButton.getText().equals("Done")) {
+                    clickDone();
+                } else {
+                    clickAdd();
+                    createButton.setText(R.string.done_button);
+                }
+            }
+        });
+
+        cancelButton.setText(R.string.cancel_button);
+        cancelButton.setVisibility(View.VISIBLE);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (waiting) {
+                    paused = false;
+                    waiting = false;
+                    cancelButton.setVisibility(View.GONE);
+                } else {
+                    createLinks = false;
+                    waiting = true;
+                    lines.clear();
+                    drawable = joints.clone();
+                    mRgba = joints.clone();
+                    cancelButton.setText(R.string.button_back);
+                }
+                deleteLinks();
+                createButton.setVisibility(View.GONE);
+            }
+        });
+    }
+
+
+    private void actionHelp() {
+        FragmentManager fm = getSupportFragmentManager();
+        HelpFragment fragment = new HelpFragment();
+        fragment.setStyle(HelpFragment.STYLE_NORMAL, R.style.CustomDialog);
+        Bundle args = new Bundle();
+        args.putString("key", "capture");
+        fragment.setArguments(args);
+        fragment.show(fm, "fragment_help");
     }
 
 
@@ -543,52 +569,17 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
         float yTouch = (event.getY() / height) * mRgba.rows();
 
         Log.i(TAG, "MainActivity.onTouch: Touch at (" + xTouch + "," + yTouch + ")");
-        int index = -1;
+
 
         if (addJoints) {
             if (centers.isEmpty()) {
                 Log.i(TAG, "MainActivity.onTouch: Runnin on empty.");
                 return true;
             }
-            Log.i(TAG, "Touch centers = " + centers.size());
-            for (org.opencv.core.Point center : centers) {
-
-                if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
-                    Log.i(TAG, "*********************");
-                    Log.i(TAG, "MainActivity.onTouch: Center at (" + center.x + "," + center.y + ")");
-                    Log.i(TAG, "*********************");
-                    index = centers.indexOf(center);
-                    Imgproc.circle(drawable, center, 8, new Scalar(240, 0, 0), -1);
-                    Joint joint = new Joint();
-                    String jointName = mPrototype.getPrototypeName() + "Joint" + fakeID;
-                    fakeID++;
-                    joint.setJointName(jointName);
-                    joint.setPrototypeID(mPrototype.getPrototypeId());
-                    joint.setXCoord(center.x);
-                    joint.setYCoord(center.y);
-                    mJointViewModel.insert(joint);
-                    break;
-                }
-            }
-            if(index != -1) {
-                centers.remove(index);
-            }
+            addJoints(maxDistance, xTouch, yTouch);
 
         } else if(createLinks) {
-            for (Joint joint: mJoints) {
-                if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
-                    if(!lines.contains(joint)) {
-                        lines.add(joint);
-                        createButton.setText(R.string.add_button);
-                    } else {
-                        lines.remove(joint);
-                    }
-                }
-            }
-            drawable = mRgba.clone();
-            for(Joint joint: lines) {
-                Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 240, 0), 4);
-            }
+            createLinks(maxDistance, xTouch, yTouch);
 
         }  else {
             toSave = drawable.clone();
@@ -600,6 +591,54 @@ public class PrototypeCaptureActivity extends AppCompatActivity implements View.
 
         //Log.i(TAG, "MainActivity.onTouch: I can go the distance");
         return true;
+    }
+
+
+    private void addJoints(float maxDistance, float xTouch, float yTouch) {
+        int index = -1;
+
+
+        Log.i(TAG, "Touch centers = " + centers.size());
+        for (org.opencv.core.Point center : centers) {
+
+            if (Math.abs(center.x - xTouch) < maxDistance && Math.abs(center.y - yTouch) < maxDistance) {
+                Log.i(TAG, "*********************");
+                Log.i(TAG, "MainActivity.onTouch: Center at (" + center.x + "," + center.y + ")");
+                Log.i(TAG, "*********************");
+                index = centers.indexOf(center);
+                   /* Imgproc.circle(drawable, center, 8, new Scalar(240, 0, 0), -1);
+                    Joint joint = new Joint();
+                    String jointName = mPrototype.getPrototypeName() + "Joint" + fakeID;
+                    fakeID++;
+                    joint.setJointName(jointName);
+                    joint.setPrototypeID(mPrototype.getPrototypeId());
+                    joint.setXCoord(center.x);
+                    joint.setYCoord(center.y);
+                    mJointViewModel.insert(joint); */
+                break;
+            }
+        }
+        if(index != -1) {
+            centers.remove(index);
+        }
+    }
+
+
+    private void createLinks(float maxDistance, float xTouch, float yTouch) {
+        for (Joint joint: mJoints) {
+            if(Math.abs(joint.getXCoord() - xTouch) < maxDistance && Math.abs(joint.getYCoord() - yTouch) < maxDistance) {
+                if(!lines.contains(joint)) {
+                    lines.add(joint);
+                    createButton.setText(R.string.add_button);
+                } else {
+                    lines.remove(joint);
+                }
+            }
+        }
+        drawable = mRgba.clone();
+        for(Joint joint: lines) {
+            Imgproc.circle(drawable, new Point(joint.getXCoord(), joint.getYCoord()), 10, new Scalar(240, 240, 0), 4);
+        }
     }
 
 

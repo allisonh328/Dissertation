@@ -93,7 +93,7 @@ public class SimulatorView extends SurfaceView implements
                     long startTime = System.nanoTime();
                     runnable.run();
                     long stopTime = System.nanoTime();
-                    Log.i(TAG, "SimulatorView: time elapsed = " + Long.toString(stopTime - startTime));
+                    //Log.i(TAG, "SimulatorView: time elapsed = " + Long.toString(stopTime - startTime));
                 }
             }
         }).start();
